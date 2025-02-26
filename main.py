@@ -1,40 +1,21 @@
-from data.generators import PDEDataGenerator, DataInputer
-from models.sindy import SINDyModel, PDEFIND
-from experiments.experiments import run_experiment
-import matplotlib.pyplot as plt
+from code.src.data_loader import *
+from code.src.wrappers import *
 
 
-generator = PDEDataGenerator()
-inputer = DataInputer()
+# Usage example
+if __name__ == "__main__":
+    # Load your data
+    u, x, t = load_data()  # You need to implement this function
 
-inputer.select_data('KdV_data.csv')
-# inputer.select_data('vdp_data.npy')
+    # Create wrappers
+    pde_find = PDEFINDWrapper()
+    wsindy = WSINDyWrapper()
 
+    # Run PDE discovery
+    pde_find_result = pde_find.run(u, x, t)
+    wsindy_result = wsindy.run(u, x, t)
 
-grids, data = inputer.extract_data()
-x = grids[1][0]
-t = grids[0][:, 0]
-
-models = {
-    # "SINDy": SINDyModel(alpha=0.1),
-    "PDE-FIND": PDEFIND(data, x, t),
-    # Add other models (e.g., PINNs, DeepMoD)
-}
-
-results = {}
-for model_name, model in models.items():
-    results[model_name] = run_experiment(
-        data=data,
-        model=model,
-        noise_level=0
-    )
-
-# Visualize results
-plt.figure()
-plt.pcolormesh(t, x, data)
-# plt.plot(data, t)
-plt.xlabel('t', fontsize=16)
-plt.ylabel('x', fontsize=16)
-plt.title(r'$u(x, t)$', fontsize=16)
-plt.show()
+    # Compare results
+    print("PDE-FIND result:", pde_find_result)
+    print("WSINDy result:", wsindy_result)
 

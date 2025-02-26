@@ -25,13 +25,13 @@ class PDEDataGenerator:
         return u, u_noisy, true_coeffs
 
 
-class DataInputer:
+class DataLoader:
     def select_data(self, data):
         directory = os.path.dirname(os.path.realpath(__file__))
-        directory = os.path.join(directory, "datasets")
+        directory = os.path.join(directory, "../../data/datasets")
         self.filepath = os.path.join(directory, data)
 
-    def extract_data(self):
+    def load_data(self):
         data = np.loadtxt(self.filepath, delimiter=',').T
         shape = len(data)
         t = np.linspace(0, 1, shape)
