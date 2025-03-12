@@ -1,6 +1,1 @@
-[submodule "external/SGA-PDE"]
-	path = external/SGA-PDE
-	url = https://github.com/YuntianChen/SGA-PDE
-[submodule "external/CINDy"]
-	path = external/CINDy
-	url = https://github.com/ZIB-IOL/CINDy
+
