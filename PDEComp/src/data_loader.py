@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 import os
+import matplotlib.pyplot as plt
 
 
 class PDEDataGenerator:
@@ -16,31 +17,41 @@ class PDEDataGenerator:
         u = sol.y.T
         u_noisy = u + noise_level * np.std(u) * np.random.randn(*u.shape)
 
-        true_coeffs = {
-            "u": 0,  # Coefficient for u (if present)
-            "u_x": 1,  # Coefficient for u*u_x
-            "u_xx": -nu,  # Coefficient for diffusion term
-        }
-
-        return u, u_noisy, true_coeffs
+        return u, u_noisy
 
 
 class DataLoader:
-    def select_data(self, data):
+    def load_data(self, data):
         directory = os.path.dirname(os.path.realpath(__file__))
-        directory = os.path.join(directory, "../../data/datasets")
-        self.filepath = os.path.join(directory, data)
+        directory = os.path.join(directory, "../../data/")
+        filepath = os.path.join(directory, data)
+        data = np.load(filepath)
 
-    def load_data(self):
-        data = np.loadtxt(self.filepath, delimiter=',').T
-        shape = len(data)
-        t = np.linspace(0, 1, shape)
-        x = np.linspace(0, 1, shape)
-        grids = np.meshgrid(x, t, indexing='ij')  # np.stack(, axis = 2)
+        # ode, vdp
+        # step = 0.05
+        # steps_num = 320
+        # t = np.arange(start=0., stop=step * steps_num, step=step)
 
-        # data = np.load(self.filepath)
+        # wave, kdv
+        # shape = len(data)
+        # t = np.linspace(0, 1, shape)
+        # x = np.linspace(0, 1, shape)
+
+        # ac
+        t = np.linspace(0., 1., 51)
+        x = np.linspace(-1., 0.984375, 128)
+
+        plt.figure()
+        plt.pcolormesh(x, t, data)
+        plt.xlabel('x', fontsize=16)
+        plt.ylabel('t', fontsize=16)
+        plt.title(r'$u(x, t)$', fontsize=16)
+        plt.show()
+
+        return data, x, t
+
         # step = 0.05
         # steps_num = 320
         # t = np.arange(start=0., stop=step * steps_num, step=step)
         # grids = np.meshgrid(t, t, indexing='ij')  # np.stack(, axis = 2)
-        return grids, data
+        # return data, t, t
