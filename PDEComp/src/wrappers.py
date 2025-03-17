@@ -14,9 +14,7 @@ from deepymod.model.library import Library1D
 from deepymod.model.sparse_estimators import Threshold
 from deepymod.training import train
 from deepymod.training.sparsity_scheduler import TrainTestPeriodic
-
-import odeformer
-from odeformer.model import SymbolicTransformerRegressor
+# from odeformer.model import SymbolicTransformerRegressor
 
 
 # import epde
@@ -244,13 +242,10 @@ class ODEFormerWrapper(PDEDiscoveryWrapper):
         return XT
 
     def discover_pde(self, u, x, t):
-        dstr = SymbolicTransformerRegressor(
-            from_pretrained=True)
-
-        model_args = {'beam_size': 20,
-                      'beam_temperature': 0.1}
+        dstr = SymbolicTransformerRegressor(from_pretrained=True)
+        model_args = {'beam_size': 50, 'beam_temperature': 0.1}
         dstr.set_model_args(model_args)
-        dstr.fit(t, u)
+        dstr.fit(t, [u])
         dstr.print()
         pass
 

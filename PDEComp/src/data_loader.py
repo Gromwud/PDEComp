@@ -25,30 +25,47 @@ class DataLoader:
         directory = os.path.dirname(os.path.realpath(__file__))
         directory = os.path.join(directory, "../../data/")
         filepath = os.path.join(directory, data)
-        data = np.load(filepath)
+        u = np.load(filepath)
 
-        # ode, vdp
-        # step = 0.05
-        # steps_num = 320
-        # t = np.arange(start=0., stop=step * steps_num, step=step)
+        if data == "ode_data.npy" or data == "vdp_data.npy":
+            # ode, vdp
+            step = 0.05
+            steps_num = 320
+            t = np.arange(start=0., stop=step * steps_num, step=step)
+            x = None
+            plt.figure()
+            plt.plot(t, u)
+            plt.xlabel('t', fontsize=16)
+            plt.ylabel('u', fontsize=16)
+            plt.title(r'$u(x, t)$', fontsize=16)
+            plt.show()
 
-        # wave, kdv
-        # shape = len(data)
-        # t = np.linspace(0, 1, shape)
-        # x = np.linspace(0, 1, shape)
+        elif data == "wave_data.npy" or data == "kdv_data.npy":
+            # wave, kdv
+            shape = len(u)
+            t = np.linspace(0, 1, shape)
+            x = np.linspace(0, 1, shape)
 
-        # ac
-        t = np.linspace(0., 1., 51)
-        x = np.linspace(-1., 0.984375, 128)
+            plt.figure()
+            plt.pcolormesh(x, t, u)
+            plt.xlabel('x', fontsize=16)
+            plt.ylabel('t', fontsize=16)
+            plt.title(r'$u(x, t)$', fontsize=16)
+            plt.show()
 
-        plt.figure()
-        plt.pcolormesh(x, t, data)
-        plt.xlabel('x', fontsize=16)
-        plt.ylabel('t', fontsize=16)
-        plt.title(r'$u(x, t)$', fontsize=16)
-        plt.show()
+        elif data == "ac_data.npy":
+            # ac
+            t = np.linspace(0., 1., 51)
+            x = np.linspace(-1., 0.984375, 128)
 
-        return data, x, t
+            plt.figure()
+            plt.pcolormesh(x, t, u)
+            plt.xlabel('t', fontsize=16)
+            plt.ylabel('x', fontsize=16)
+            plt.title(r'$u(x, t)$', fontsize=16)
+            plt.show()
+
+        return u, x, t
 
         # step = 0.05
         # steps_num = 320
