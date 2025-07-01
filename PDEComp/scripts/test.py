@@ -6,7 +6,7 @@ from PDEComp.src.data_loader import *
 if __name__ == "__main__":
     # Load your data
     dl = DataLoader()
-    u, x, t = dl.load_data("kdv_data.npy")
+    u, x, t = dl.load_data("data/Korteweg-de-Vries/kdv_data.npy")
     # u, x, t = dl.load_data("wave_data.npy")
     # u, x, t = dl.load_data("ac_data.npy")
     # u, x, t = dl.load_data("vdp_data.npy")
@@ -27,8 +27,8 @@ if __name__ == "__main__":
 
     # Run PDE discovery
     pde_find_result = pde_find.run(u, x, t)
-    wsindy_result = wsindy.run(u, x, t)
-    deepymod_result = deepymod_model.run(u, x, t)
+    # wsindy_result = wsindy.run(u, x, t)
+    # deepymod_result = deepymod_model.run(u, x, t)
     # odeformer_result = odeformer_model.run(u, x, t)
 
     # wsindy_pr = wsindy.predict(wsindy_result, x_test)

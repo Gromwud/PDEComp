@@ -65,24 +65,30 @@ class PDEFINDWrapper(PDEDiscoveryWrapper):
         # library_functions = [lambda x: np.cos(x)*np.cos(x)]
         # library_functions = [lambda x: x, lambda x: x * x]
         # library_functions = [lambda x: x * x, lambda x: np.cos(x) * np.cos(x)]
-        library_functions = [lambda x: x, lambda x: x * x, lambda x: np.sin(x)*np.cos(x)]
+        # library_functions = [lambda x: x, lambda x: x * x, lambda x: np.sin(x)*np.cos(x)]
 
         # library_function_names = [lambda x: 'cos(' +x+ ')'+'sin(' +x+ ')']
         # library_function_names = [lambda x: x, lambda x: x + x]
         # library_function_names = [lambda x: x + x, lambda x: 'cos(' + x + ')' + 'sin(' + x + ')']
-        library_function_names = [lambda x: x, lambda x: x + x, lambda x: 'cos(' +x+ ')'+'sin(' +x+ ')']
-        pde_lib = ps.PDELibrary(library_functions=library_functions,
-                                function_names=library_function_names,
-                                derivative_order=3, spatial_grid=x,
+        # library_function_names = [lambda x: x, lambda x: x + x, lambda x: 'cos(' +x+ ')'+'sin(' +x+ ')']
+        # u = ps.AxesArray(np.ones((len(x) * len(t), 2)), {"ax_coord": 1})
+        functions = [lambda x: np.sin(x), lambda x: np.cos(x) * np.sin(t)]
+        lib_custom = ps.CustomLibrary(library_functions=functions)
+        pde_lib = ps.PDELibrary(function_library=ps.GeneralizedLibrary([ps.PolynomialLibrary(degree=3,include_bias=False), lib_custom]),
+                                # function_names=library_function_names,
+                                derivative_order=3,
+                                spatial_grid=x,
+                                # temporal_grid=t,
                                 include_bias=True,
-                                is_uniform=True)
+                                is_uniform=True).fit(u)
+        print(pde_lib.get_feature_names(), "\n")
 
-        optimizer = ps.STLSQ(threshold=2, alpha=1e-5, normalize_columns=True)
-        # optimizer = ps.SR3(threshold=7, thresholder="l0", tol=1e-15, nu=1e2, normalize_columns=True, max_iter=10000)
+        # optimizer = ps.STLSQ(threshold=1, alpha=1e-5, normalize_columns=True)
+        # optimizer = ps.SR3(tol=1e-15, normalize_columns=True, max_iter=10000)
         # optimizer = ps.SR3(threshold=5, max_iter=10000, tol=1e-15, thresholder='l1', normalize_columns=True)
         # optimizer = ps.FROLS(normalize_columns=True, kappa=1e-5)
         # optimizer = ps.SSR(normalize_columns=True, kappa=5e-3)
-        # optimizer = ps.SSR(criteria='model_residual', normalize_columns=True, kappa=5e-3)
+        optimizer = ps.SSR(criteria='model_residual', normalize_columns=True, kappa=5e-3)
 
         model = ps.SINDy(feature_library=pde_lib, optimizer=optimizer)
         model.fit(u, t=t[1]-t[0])
@@ -127,18 +133,17 @@ class WSINDyWrapper(PDEDiscoveryWrapper):
         # library_function_names = [lambda x: 'cos(' +x+ ')'+'sin(' +x+ ')']
         library_function_names = [lambda x: x + x, lambda x: 'cos(' + x + ')' + 'sin(' + x + ')']
         # library_function_names = [lambda x: x, lambda x: x + x, lambda x: 'cos(' +x+ ')'+'sin(' +x+ ')']
-        pde_lib = ps.WeakPDELibrary(library_functions=library_functions,
-                                function_names=library_function_names,
+        pde_lib = ps.WeakPDELibrary(function_library=ps.PolynomialLibrary(degree=1, include_bias=False),
                                 derivative_order=3, spatiotemporal_grid=grid,
-                                include_bias=True, K=80, is_uniform=True, implicit_terms=False, )
-
+                                include_bias=False, K=80, is_uniform=True, implicit_terms=False, )
         optimizer = ps.SSR(normalize_columns=True, kappa=1e-10, max_iter=100)
-        # optimizer = ps.STLSQ(threshold=5, alpha=1e-3, normalize_columns=True)
+        # optimizer = ps.STLSQ(threshold=0.001, alpha=1e-8, normalize_columns=True)
         # optimizer = ps.SR3(threshold=0.05, max_iter=1000, tol=1e-3, thresholder='l0', normalize_columns=True)
 
         model = ps.SINDy(feature_library=pde_lib, optimizer=optimizer)
-        # model.fit(u)
-        model.fit(u, library_ensemble=False, n_models=20)
+        model.fit(u)
+
+        # model.fit(u, library_ensemble=False, n_models=20)
         model.print()
         return model
 

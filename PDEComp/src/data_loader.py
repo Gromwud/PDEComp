@@ -23,7 +23,7 @@ class PDEDataGenerator:
 class DataLoader:
     def load_data(self, data):
         directory = os.path.dirname(os.path.realpath(__file__))
-        directory = os.path.join(directory, "../../data/")
+        directory = os.path.join(directory, "../../")
         filepath = os.path.join(directory, data)
         u = np.load(filepath)
 
@@ -40,7 +40,7 @@ class DataLoader:
             plt.title(r'$u(x, t)$', fontsize=16)
             plt.show()
 
-        elif data == "wave_data.npy" or data == "kdv_data.npy":
+        elif data == "wave_data.npy" or "kdv_data.npy" in data:
             # wave, kdv
             shape = len(u)
             t = np.linspace(0, 1, shape)
