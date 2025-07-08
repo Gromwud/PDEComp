@@ -1,0 +1,8 @@
+services:
+  pysindy:
+    build:
+      context: .
+      dockerfile: pysindy/Dockerfile
+    volumes:
+      - ./data:/app/data:ro
+      - ./results:/app/results
