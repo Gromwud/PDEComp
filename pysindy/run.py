@@ -5,7 +5,6 @@ from pathlib import Path
 import scipy.io as scio
 import json
 
-# Конфигурация (можно вынести в отдельный config.yaml)
 DATA_DIR = Path("data")
 RESULTS_DIR = Path("results/pysindy")
 DATASETS = [
@@ -13,8 +12,7 @@ DATASETS = [
     "kdv_data.mat",
     "burgers_data.mat",
     "vdp_data.npy",
-]  # Все тестовые данные
-
+]
 
 def save_combined_results(results):
     """Save results to a common JSON file"""
@@ -32,7 +30,6 @@ def save_combined_results(results):
 def load_data(filename):
     """Загрузка данных без привязки к структуре базового класса"""
 
-    # Универсальная обработка временных данных
     if filename == "ode_data.npy" or filename == "vdp_data.npy":
         data = np.load(DATA_DIR / filename)
         step = 0.05
@@ -57,6 +54,11 @@ def load_data(filename):
         x = np.ravel(data["x"])
         data = np.real(data["usol"]).T
 
+    elif filename == "pde_divide_data.npy":
+        data = np.load(DATA_DIR / filename)
+        t = np.linspace(0, 0.5, 251)
+        x = np.linspace(1, 2, 100)
+
     if len(data.shape) == 1:
         data = data.T.reshape(len(t), 1)
     elif len(data.shape) == 2:
@@ -67,7 +69,6 @@ def load_data(filename):
 
 def run_sindy(data, x, t, dataset_name):
     """Основная логика идентификации"""
-    # 1. Настройка модели
     if dataset_name == "ac_data.npy":
         library = ps.PDELibrary(
             function_library=ps.PolynomialLibrary(degree=3, include_bias=False),
@@ -127,25 +128,16 @@ def run_sindy(data, x, t, dataset_name):
             max_iter=6000,
             # normalize_columns=True
         )
-    # 2. Выбор типа задачи
     model = ps.SINDy(optimizer=optimizer, feature_library=library)
-
-    # 3. Обучение
     model.fit(data, t=t[1] - t[0])
     model.print(precision=4)
 
-    # 4. Сохранение результатов
     result = {
         "dataset": dataset_name.split(".")[0],
         "coefficients": model.coefficients().tolist(),
         "features": model.get_feature_names(),
         # "model_str": str(model.print(precision=4))
     }
-
-    # Save individual results
-    # save_path = RESULTS_DIR/dataset_name.split(".")[0]
-    # save_path.mkdir(parents=True, exist_ok=True)
-    # np.save(save_path/"coefficients.npy", model.coefficients())
 
     return result
 
@@ -161,6 +153,5 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"Error processing {dataset}: {str(e)}")
 
-    # Save combined results
     save_combined_results(all_results)
     print("\nAll experiments completed!")
