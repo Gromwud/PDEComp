@@ -1,0 +1,6 @@
+numpy
+torch
+scikit_learn
+pysindy
+natsort
+tensorboard
