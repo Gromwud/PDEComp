@@ -33,22 +33,22 @@ services:
       - ./data:/app/data:ro
       - ./results:/app/results
 
-  # discover:
-  #   build:
-  #     context: .
-  #     dockerfile: discover/Dockerfile
-  #   deploy:  
-  #     resources:
-  #       reservations:
-  #         devices:
-  #           - driver: nvidia
-  #             count: 1
-  #             capabilities: [gpu]
-  #   environment:
-  #     - NVIDIA_VISIBLE_DEVICES=all
-  #   volumes:
-  #     - ./data:/app/data:ro
-  #     - ./results:/app/results
+  discover:
+    build:
+      context: .
+      dockerfile: discover/Dockerfile
+    deploy:  
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      - ./data:/app/data:ro
+      - ./results:/app/results
   
   deepmod:
     build:

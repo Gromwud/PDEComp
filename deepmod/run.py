@@ -102,7 +102,7 @@ def run_deepmod(data, x, t, filename):
         train_dataloader, test_dataloader = get_train_test_loader(dataset, train_test_split=0.8)
         network = NN(2, [30, 30, 30, 30], 1)
         library = Library1D(poly_order=3, diff_order=3)
-        estimator = Threshold(0.2)
+        estimator = Threshold(0.1)
         sparsity_scheduler = TrainTestPeriodic(periodicity=50, patience=200, delta=1e-5)
         constraint = LeastSquares()
         model = DeepMoD(network, library, estimator, constraint).to(device)

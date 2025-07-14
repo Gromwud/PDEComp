@@ -14,7 +14,7 @@ COPY discover/requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir tensorboard==1.15 && \
-    RUN git clone https://github.com/Gromwud/DISCOVER.git /tmp/discover && \
+    git clone https://github.com/Gromwud/DISCOVER.git /tmp/discover && \
     cd /tmp/discover && \
     pip install -e .
 
