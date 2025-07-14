@@ -11,7 +11,8 @@ DATASETS = [
     "ac_data.npy",
     "kdv_data.mat",
     "burgers_data.mat",
-    "vdp_data.npy",
+    # "vdp_data.npy",
+    "pde_divide_data.npy"
 ]
 
 def save_combined_results(results):
@@ -67,9 +68,9 @@ def load_data(filename):
     return data, x, t
 
 
-def run_sindy(data, x, t, dataset_name):
+def run_sindy(data, x, t, filename):
     """Основная логика идентификации"""
-    if dataset_name == "ac_data.npy":
+    if filename == "ac_data.npy":
         library = ps.PDELibrary(
             function_library=ps.PolynomialLibrary(degree=3, include_bias=False),
             # function_names=library_function_names,
@@ -82,7 +83,7 @@ def run_sindy(data, x, t, dataset_name):
 
         optimizer = ps.STLSQ(threshold=1, alpha=1e-5, normalize_columns=True)
 
-    elif dataset_name == "kdv_data.mat":
+    elif filename == "kdv_data.mat":
         library = ps.PDELibrary(
             function_library=ps.PolynomialLibrary(degree=2, include_bias=False),
             derivative_order=3,
@@ -94,7 +95,7 @@ def run_sindy(data, x, t, dataset_name):
 
         optimizer = ps.STLSQ(threshold=5, alpha=1e-5, normalize_columns=True)
 
-    elif dataset_name == "burgers_data.mat":
+    elif filename == "burgers_data.mat":
         library = ps.PDELibrary(
             function_library=ps.PolynomialLibrary(degree=2, include_bias=False),
             derivative_order=3,
@@ -106,7 +107,7 @@ def run_sindy(data, x, t, dataset_name):
 
         optimizer = ps.STLSQ(threshold=1, alpha=1e-5, normalize_columns=True)
 
-    elif dataset_name == "vdp_data.npy":
+    elif filename == "vdp_data.npy":
         library_functions = [lambda x: x, lambda x: x * x]
         library_function_names = [lambda x: x, lambda x: x + x]
 
@@ -128,12 +129,38 @@ def run_sindy(data, x, t, dataset_name):
             max_iter=6000,
             # normalize_columns=True
         )
+
+    elif filename == "pde_divide_data.npy":
+        functions = [
+            lambda x : 1/x,
+            lambda x : 1/x,
+                     ]
+        functions_names = [lambda x : "1/" + x]
+        
+        library = ps.PDELibrary(
+            function_library=ps.PolynomialLibrary(degree=2, include_bias=False),
+            derivative_order=2,
+            spatial_grid=x,
+            include_bias=True,
+        )
+
+        lib_custom = ps.CustomLibrary(library_functions=functions, function_names=functions_names) * library
+
+        library = ps.ConcatLibrary([lib_custom, library]).fit(data)
+        print(library.get_feature_names(), "\n")
+
+        # optimizer = ps.STLSQ(threshold=1, alpha=1e-5, normalize_columns=False)
+        optimizer = ps.SR3(tol=1e-15, normalize_columns=True, max_iter=10000)
+        # optimizer = ps.SR3(threshold=5, max_iter=10000, tol=1e-15, thresholder='l1', normalize_columns=True)
+        # optimizer = ps.FROLS(normalize_columns=True, kappa=1e-5)
+        # optimizer = ps.SSR(normalize_columns=True, kappa=5e-3)
+
     model = ps.SINDy(optimizer=optimizer, feature_library=library)
     model.fit(data, t=t[1] - t[0])
     model.print(precision=4)
 
     result = {
-        "dataset": dataset_name.split(".")[0],
+        "dataset": filename.split(".")[0],
         "coefficients": model.coefficients().tolist(),
         "features": model.get_feature_names(),
         # "model_str": str(model.print(precision=4))

@@ -6,4 +6,12 @@ services:
     volumes:
       - ./data:/app/data:ro
       - ./results:/app/results
+
+  epde:
+    build:
+      context: .
+      dockerfile: epde/Dockerfile
+    volumes:
+      - ./data:/app/data:ro
+      - ./results:/app/results
   

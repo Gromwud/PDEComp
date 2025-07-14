@@ -11,13 +11,13 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip and install dependencies in one RUN
-COPY pysindy/requirements.txt .
+COPY epde/requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir git+https://github.com/dynamicslab/pysindy.git
+    pip install --no-cache-dir git+https://github.com/ITMO-NSS-team/EPDE.git
 
 # Copy only what's needed (consider .dockerignore)
-COPY pysindy/run.py .
+COPY epde/run.py .
 COPY data /app/data
 
 # Create results directory at runtime rather than build time

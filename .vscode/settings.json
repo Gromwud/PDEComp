@@ -1,0 +1,14 @@
+{
+    "cSpell.words": [
+        "dataclasses",
+        "derivs",
+        "meshgrid",
+        "moeadd",
+        "multiobjective",
+        "popsize",
+        "probas",
+        "psutil",
+        "pytest",
+        "scikit"
+    ]
+}
