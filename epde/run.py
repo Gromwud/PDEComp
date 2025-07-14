@@ -2,9 +2,11 @@ import os
 import numpy as np
 from epde.interface.interface import EpdeSearch
 from epde import TrigonometricTokens
+import torch
 from pathlib import Path
 import scipy.io as scio
 import json
+import time
 
 DATA_DIR = Path("data")
 RESULTS_DIR = Path("results/epde")
@@ -67,6 +69,7 @@ def load_data(filename):
 
 def run_epde(data, x, t, filename):
     """Основная логика идентификации"""
+    start = time.perf_counter()
     grid = np.meshgrid(t, x, indexing="ij")
 
     if filename == "ac_data.npy":
@@ -118,12 +121,15 @@ def run_epde(data, x, t, filename):
         ...
 
     epde_search_obj.equations(only_print=True, num=1)
+    finish = time.perf_counter()
+    elapsed_time = finish - start
     epde_search_obj.visualize_solutions()
 
     result = {
         "dataset": filename.split(".")[0],
         "coefficients": [],
         "features": [],
+        "time": elapsed_time
         # "model_str": str(model.print(precision=4))
     }
 
@@ -131,6 +137,7 @@ def run_epde(data, x, t, filename):
 
 
 if __name__ == "__main__":
+    print("CUDA available: ", torch.cuda.is_available())
     all_results = []
     for dataset in DATASETS:
         print(f"\n=== Processing {dataset} ===")

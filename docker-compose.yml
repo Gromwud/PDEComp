@@ -11,7 +11,24 @@ services:
     build:
       context: .
       dockerfile: epde/Dockerfile
+    deploy:  # ← Docker Desktop requires this section
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
     volumes:
       - ./data:/app/data:ro
       - ./results:/app/results
+
+  # discover:
+  #   build:
+  #     context: .
+  #     dockerfile: discover/Dockerfile
+  #   volumes:
+  #     - ./data:/app/data:ro
+  #     - ./results:/app/results
   
