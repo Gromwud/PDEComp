@@ -3,6 +3,15 @@ services:
     build:
       context: .
       dockerfile: pysindy/Dockerfile
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
     volumes:
       - ./data:/app/data:ro
       - ./results:/app/results
@@ -11,7 +20,7 @@ services:
     build:
       context: .
       dockerfile: epde/Dockerfile
-    deploy:  # ← Docker Desktop requires this section
+    deploy: 
       resources:
         reservations:
           devices:
@@ -28,7 +37,33 @@ services:
   #   build:
   #     context: .
   #     dockerfile: discover/Dockerfile
+  #   deploy:  
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: 1
+  #             capabilities: [gpu]
+  #   environment:
+  #     - NVIDIA_VISIBLE_DEVICES=all
   #   volumes:
   #     - ./data:/app/data:ro
   #     - ./results:/app/results
+  
+  deepmod:
+    build:
+      context: .
+      dockerfile: deepmod/Dockerfile
+    deploy: 
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      - ./data:/app/data:ro
+      - ./results:/app/results
   
