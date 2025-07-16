@@ -47,28 +47,70 @@ def load_data(filename):
         steps_num = 320
         t = np.arange(start=0.0, stop=step * steps_num, step=step)
         x = None
+        y = None
+        z = None
 
-    elif filename == "kdv_data_periodic.npy":
+    elif filename == "kdv_periodic_data.npy":
         data = np.load(DATA_DIR / filename)
         shape = len(data)
         t = np.linspace(0, 1, shape)
         x = np.linspace(0, 1, shape)
+        y = None
+        z = None
 
     elif filename == "ac_data.npy":
         data = np.load(DATA_DIR / filename)
         t = np.linspace(0.0, 1.0, 51)
         x = np.linspace(-1.0, 0.984375, 128)
+        y = None
+        z = None
 
     elif filename == "kdv_data.mat" or filename == "burgers_data.mat":
         data = scio.loadmat(DATA_DIR / filename)
+        data = np.real(data["usol"]).T
         t = np.ravel(data["t"])
         x = np.ravel(data["x"])
-        data = np.real(data["usol"]).T
+        y = None
+        z = None
 
     elif filename == "pde_divide_data.npy":
         data = np.load(DATA_DIR / filename)
+        t = np.linspace(0, 1, 251)
+        x = np.linspace(1, 2, 100)
+        y = None
+        z = None
+
+    elif filename == "pde_compound_data.npy":
+        data = np.load(filename)
         t = np.linspace(0, 0.5, 251)
         x = np.linspace(1, 2, 100)
+        y = None
+        z = None
+
+    elif filename == "wave_data.npy":
+        data = np.loadtxt(filename, delimiter=',').T
+        t = np.linspace(0, 1, shape + 1)
+        x = np.linspace(0, 1, shape + 1)
+        y = None
+        z = None
+
+    elif filename == "lorenz_data.npy":
+        data = np.load(filename)
+        t = np.load("lorenz_time.npy")
+        end = 1000
+        t = t[:end]
+        x = data[:end, 0]
+        y = data[:end, 1]
+        z = data[:end, 2]
+
+    elif filename == "lotka_data.npy":
+        data = np.load(filename)
+        t = np.load("lotka_time.npy")
+        end = 150
+        t = t[:end]
+        x = data[:end, 0]
+        y = data[:end, 1]
+        z = None
     
     t = np.ravel(t).squeeze()
     x = np.ravel(x).squeeze()
