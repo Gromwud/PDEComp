@@ -1,38 +1,32 @@
-# Use a more specific version tag for reproducibility
 FROM python:3.7-slim
-
 
 WORKDIR /app
 
-# Combine apt commands and clean up in single RUN layer
+# Install system dependencies
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends git && \
+    apt-get install -y --no-install-recommends git libnuma1 ocl-icd-opencl-dev && \
     rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip and install dependencies in one RUN
+# Install Python dependencies
 COPY discover/requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir tensorboard==1.15 && \
-    git clone https://github.com/Gromwud/DISCOVER.git /tmp/discover && \
-    cd /tmp/discover && \
-    pip install -e .
+    pip install tensorboard==1.15 protobuf==3.20
 
-# RUN git clone https://github.com/Gromwud/DISCOVER.git /tmp/discover && \
-#     pip install --no-cache-dir -e /tmp/discover && \
-#     rm -rf /tmp/discover
+RUN git clone https://github.com/Gromwud/DISCOVER.git /tmp/discover && \
+    cd /tmp/discover/dso && \
+    pip install -e . && \
+    echo "/tmp/discover" > /usr/local/lib/python3.7/site-packages/dso.pth && \
+    cd .. 
 
-# Copy only what's needed (consider .dockerignore)
+# Copy application files
 COPY discover/run.py .
 COPY data /app/data
 
-# Create results directory at runtime rather than build time
-VOLUME /app/results
-
-# Specify a non-root user for security
+# Setup non-root user
 RUN useradd -m appuser && chown -R appuser:appuser /app
 USER appuser
 
-# Set default command if appropriate
+VOLUME /app/results
 
 CMD ["python", "run.py"]
