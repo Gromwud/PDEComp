@@ -1,9 +1,9 @@
-import os
 import numpy as np
 import pysindy as ps
 from pathlib import Path
 import scipy.io as scio
 import json
+from datetime import datetime
 
 DATA_DIR = Path("data")
 RESULTS_DIR = Path("results/pysindy")
@@ -17,7 +17,8 @@ DATASETS = [
 
 def save_combined_results(results):
     """Save results to a common JSON file"""
-    output_file = RESULTS_DIR / "results.json"
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_file = RESULTS_DIR / f"results_{timestamp}.json"
     output_file.parent.mkdir(exist_ok=True)
 
     result = []
@@ -37,28 +38,70 @@ def load_data(filename):
         steps_num = 320
         t = np.arange(start=0.0, stop=step * steps_num, step=step)
         x = None
+        y = None
+        z = None
 
-    elif filename == "kdv_data_periodic.npy":
+    elif filename == "kdv_periodic_data.npy":
         data = np.load(DATA_DIR / filename)
         shape = len(data)
         t = np.linspace(0, 1, shape)
         x = np.linspace(0, 1, shape)
+        y = None
+        z = None
 
     elif filename == "ac_data.npy":
         data = np.load(DATA_DIR / filename)
         t = np.linspace(0.0, 1.0, 51)
         x = np.linspace(-1.0, 0.984375, 128)
+        y = None
+        z = None
 
     elif filename == "kdv_data.mat" or filename == "burgers_data.mat":
-        data = scio.loadmat(DATA_DIR / filename)
-        t = np.ravel(data["t"])
-        x = np.ravel(data["x"])
-        data = np.real(data["usol"]).T
+        system = scio.loadmat(DATA_DIR / filename)
+        data = np.real(system["usol"]).T
+        t = np.ravel(system["t"])
+        x = np.ravel(system["x"])
+        y = None
+        z = None
 
     elif filename == "pde_divide_data.npy":
         data = np.load(DATA_DIR / filename)
+        t = np.linspace(0, 1, 251)
+        x = np.linspace(1, 2, 100)
+        y = None
+        z = None
+
+    elif filename == "pde_compound_data.npy":
+        data = np.load(DATA_DIR / filename)
         t = np.linspace(0, 0.5, 251)
         x = np.linspace(1, 2, 100)
+        y = None
+        z = None
+
+    elif filename == "wave_data.csv":
+        data = np.loadtxt(DATA_DIR / filename, delimiter=',').T
+        t = np.linspace(0, 1, shape + 1)
+        x = np.linspace(0, 1, shape + 1)
+        y = None
+        z = None
+
+    elif filename == "lorenz_data.npy":
+        data = np.load(DATA_DIR / filename)
+        t = np.load(DATA_DIR / "lorenz_time.npy")
+        end = 1000
+        t = t[:end]
+        x = data[:end, 0]
+        y = data[:end, 1]
+        z = data[:end, 2]
+
+    elif filename == "lotka_data.npy":
+        data = np.load(DATA_DIR / filename)
+        t = np.load(DATA_DIR / "lotka_time.npy")
+        end = 150
+        t = t[:end]
+        x = data[:end, 0]
+        y = data[:end, 1]
+        z = None
 
     if len(data.shape) == 1:
         data = data.T.reshape(len(t), 1)
@@ -154,6 +197,12 @@ def run_sindy(data, x, t, filename):
         # optimizer = ps.SR3(threshold=5, max_iter=10000, tol=1e-15, thresholder='l1', normalize_columns=True)
         # optimizer = ps.FROLS(normalize_columns=True, kappa=1e-5)
         # optimizer = ps.SSR(normalize_columns=True, kappa=5e-3)
+
+    elif filename == "lorenz_data.npy":
+        ...
+
+    elif filename == "lotka_data.npy":
+        ...
 
     model = ps.SINDy(optimizer=optimizer, feature_library=library)
     model.fit(data, t=t[1] - t[0])

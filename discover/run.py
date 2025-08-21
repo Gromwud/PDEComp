@@ -1,9 +1,7 @@
 import os
 import numpy as np
 import warnings
-import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-import warnings
 warnings.filterwarnings("ignore", category=FutureWarning, module='numpy.*')
 warnings.filterwarnings("ignore", category=UserWarning, module='tensorflow.*')
 
@@ -13,6 +11,7 @@ from pathlib import Path
 import scipy.io as scio
 import json
 import torch
+from datetime import datetime
 
 DATA_DIR = Path("data")
 RESULTS_DIR = Path("results/epde")
@@ -27,7 +26,8 @@ DATASETS = [
 
 def save_combined_results(results):
     """Save results to a common JSON file"""
-    output_file = RESULTS_DIR / "results.json"
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_file = RESULTS_DIR / f"results_{timestamp}.json"
     output_file.parent.mkdir(exist_ok=True)
 
     result = []

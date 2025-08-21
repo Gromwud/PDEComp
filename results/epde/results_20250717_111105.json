@@ -1,0 +1,58 @@
+[
+  [
+    {
+      "dataset": "ode_data",
+      "coefficients": [],
+      "features": [],
+      "time": 64.79674665702623
+    },
+    {
+      "dataset": "vdp_data",
+      "coefficients": [],
+      "features": [],
+      "time": 62.89008832199033
+    },
+    {
+      "dataset": "lorenz_data",
+      "coefficients": [],
+      "features": [],
+      "time": 1125.1128172890167
+    },
+    {
+      "dataset": "lotka_data",
+      "coefficients": [],
+      "features": [],
+      "time": 123.94033982997644
+    },
+    {
+      "dataset": "burgers_data",
+      "coefficients": [],
+      "features": [],
+      "time": 392.677145063004
+    },
+    {
+      "dataset": "ac_data",
+      "coefficients": [],
+      "features": [],
+      "time": 194.5913801569841
+    },
+    {
+      "dataset": "kdv_data",
+      "coefficients": [],
+      "features": [],
+      "time": 1482.8037276100076
+    },
+    {
+      "dataset": "kdv_periodic_data",
+      "coefficients": [],
+      "features": [],
+      "time": 160.4215337790083
+    },
+    {
+      "dataset": "pde_divide_data",
+      "coefficients": [],
+      "features": [],
+      "time": 829.3245908289973
+    }
+  ]
+]

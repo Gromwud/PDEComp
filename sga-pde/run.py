@@ -1,18 +1,13 @@
+import os
 import numpy as np
+
+from codes import *
+from codes.sga import SGA
 from pathlib import Path
 import scipy.io as scio
 import json
 import torch
 from datetime import datetime
-from deepymod import DeepMoD
-from deepymod.data import Dataset, get_train_test_loader
-from deepymod.data.samples import Subsample_random
-from deepymod.model.constraint import LeastSquares
-from deepymod.model.func_approx import NN
-from deepymod.model.library import Library1D
-from deepymod.model.sparse_estimators import Threshold
-from deepymod.training import train
-from deepymod.training.sparsity_scheduler import TrainTestPeriodic
 
 DATA_DIR = Path("data")
 RESULTS_DIR = Path("results/epde")
@@ -112,48 +107,14 @@ def load_data(filename):
         x = data[:end, 0]
         y = data[:end, 1]
         z = None
-    
-    t = np.ravel(t).squeeze()
-    x = np.ravel(x).squeeze()
-    data = data.T
-    return data, x, t
+                
+    return data, x, y, z, t
 
 
-def run_deepmod(data, x, t, filename):
-    
+def run_discover(filename):
     """Основная логика идентификации"""
-    if torch.cuda.is_available():
-        device = "cuda"
-    else:
-        device = "cpu"
-
-    def load_dataset():
-        array = {}
-        array["x"], array["t"] = np.meshgrid(x, t, indexing="ij")
-        array["u"] = data
-        coords = torch.from_numpy(np.stack((array["t"], array["x"]), axis=-1)).float()
-        u = torch.from_numpy(np.real(array["u"])).unsqueeze(-1).float()
-        return coords, u
-
-    dataset = Dataset(load_dataset,
-        subsampler=Subsample_random,
-        subsampler_kwargs={"number_of_samples": 5000},
-        device=device,
-    )
-
     if filename == "ac_data.npy":
-        train_dataloader, test_dataloader = get_train_test_loader(dataset, train_test_split=0.8)
-        network = NN(2, [30, 30, 30, 30], 1)
-        library = Library1D(poly_order=3, diff_order=3)
-        estimator = Threshold(0.1)
-        sparsity_scheduler = TrainTestPeriodic(periodicity=50, patience=200, delta=1e-5)
-        constraint = LeastSquares()
-        model = DeepMoD(network, library, estimator, constraint).to(device)
-
-        # Defining optimizer
-        optimizer = torch.optim.Adam(
-            model.parameters(), betas=(0.99, 0.99), amsgrad=True, lr=1e-3
-        )
+        config_file_path = "/tmp/discover/dso/dso/config/MODE1/config_pde_KdV.json"
 
     elif filename == "kdv_data.mat":
         ...
@@ -167,19 +128,9 @@ def run_deepmod(data, x, t, filename):
     elif filename == "pde_divide_data.npy":
         ...
 
-    train(
-        model,
-        train_dataloader,
-        test_dataloader,
-        optimizer,
-        sparsity_scheduler,
-        log_dir='deepymod',
-        split=0.8,
-        max_iterations=100000,
-    )
+    model = DeepSymbolicOptimizer_PDE(config_file_path)
 
-    print(model.constraint_coeffs())
-    print(model.estimator_coeffs())
+    result = model.train()
 
     result = {
         "dataset": filename.split(".")[0],
@@ -192,15 +143,35 @@ def run_deepmod(data, x, t, filename):
 
 
 if __name__ == "__main__":
-    all_results = []
-    for dataset in DATASETS:
-        print(f"\n=== Processing {dataset} ===")
-        try:
-            data, x, t = load_data(dataset)
-            result = run_deepmod(data, x, t, dataset)
-            all_results.append(result)
-        except Exception as e:
-            print(f"Error processing {dataset}: {str(e)}")
+    # print("CUDA available: ", torch.cuda.is_available())
+    # all_results = []
+    # for dataset in DATASETS:
+    #     print(f"\n=== Processing {dataset} ===")
+    #     try:
+    #         result = run_discover(dataset)
+    #         all_results.append(result)
+    #     except Exception as e:
+    #         print(f"Error processing {dataset}: {str(e)}")
 
-    save_combined_results(all_results)
-    print("\nAll experiments completed!")
+    # save_combined_results(all_results)
+    # print("\nAll experiments completed!")
+    sys.stdout = Logger('notes.log', sys.stdout)
+    sys.stderr = Logger('notes.log', sys.stderr)
+    sga_num = 20
+    sga_depth = 4
+    sga_width = 5
+    sga_p_var = 0.5
+    sga_p_mute = 0.3
+    sga_p_cro = 0.5
+    sga_run = 100
+
+    print('sga_num = ', sga_num)
+    print('sga_depth = ', sga_depth)
+    print('sga_width = ', sga_width)
+    print('sga_p_var = ', sga_p_var)
+    print('sga_p_mute = ', sga_p_mute)
+    print('sga_p_cro = ', sga_p_cro)
+    print('sga_run = ', sga_run)
+
+    sga = SGA(num=sga_num, depth=sga_depth, width=sga_width, p_var=sga_p_var, p_rep=1, p_mute=sga_p_mute, p_cro=sga_p_cro)
+    sga.run(sga_run)

@@ -1,4 +1,3 @@
-import os
 import numpy as np
 from epde.interface.interface import EpdeSearch
 from epde.interface.prepared_tokens import CustomTokens, CustomEvaluator
@@ -23,7 +22,7 @@ DATASETS = [
     "ac_data.npy",
     "kdv_data.mat",
     "kdv_periodic_data.npy",
-    "wave_data.npy",
+    "wave_data.csv",
     "pde_divide_data.npy",
     "pde_compound_data.npy",
 ]
@@ -71,10 +70,10 @@ def load_data(filename):
         z = None
 
     elif filename == "kdv_data.mat" or filename == "burgers_data.mat":
-        data = scio.loadmat(DATA_DIR / filename)
-        data = np.real(data["usol"]).T
-        t = np.ravel(data["t"])
-        x = np.ravel(data["x"])
+        system = scio.loadmat(DATA_DIR / filename)
+        data = np.real(system["usol"]).T
+        t = np.ravel(system["t"])
+        x = np.ravel(system["x"])
         y = None
         z = None
 
@@ -92,16 +91,16 @@ def load_data(filename):
         y = None
         z = None
 
-    elif filename == "wave_data.npy":
+    elif filename == "wave_data.csv":
         data = np.loadtxt(DATA_DIR / filename, delimiter=',').T
-        t = np.linspace(0, 1, shape + 1)
-        x = np.linspace(0, 1, shape + 1)
+        t = np.linspace(0, 1, 81)
+        x = np.linspace(0, 1, 81)
         y = None
         z = None
 
     elif filename == "lorenz_data.npy":
         data = np.load(DATA_DIR / filename)
-        t = np.load("lorenz_time.npy")
+        t = np.load(DATA_DIR / "lorenz_time.npy")
         end = 1000
         t = t[:end]
         x = data[:end, 0]
@@ -110,7 +109,7 @@ def load_data(filename):
 
     elif filename == "lotka_data.npy":
         data = np.load(DATA_DIR / filename)
-        t = np.load("lotka_time.npy")
+        t = np.load(DATA_DIR / "lotka_time.npy")
         end = 150
         t = t[:end]
         x = data[:end, 0]
@@ -246,6 +245,8 @@ def run_epde(data, x, y, z, t, filename):
         )
 
     elif filename == "kdv_periodic_data.npy":
+        dimensionality = data.ndim - 1
+        grid = np.meshgrid(t, x, indexing="ij")
         epde_search_obj = EpdeSearch(
             use_solver=False,
             use_pic=True,
@@ -470,7 +471,8 @@ def run_epde(data, x, y, z, t, filename):
             fourier_layers=False,
         )
 
-    elif filename == "wave_data.npy":
+    elif filename == "wave_data.csv":
+        grid = np.meshgrid(t, x, indexing="ij")
         epde_search_obj = EpdeSearch(use_solver=False, use_pic=True,
                                       boundary=20,
                                       coordinate_tensors=(grid[..., 0], grid[..., 1]), device='cuda')
