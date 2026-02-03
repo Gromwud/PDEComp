@@ -1,6 +1,6 @@
 # Use a more specific version tag for reproducibility
 # FROM python:3.9-slim@sha256:<specific-sha256-hash>
-FROM python:3.9-slim
+FROM python:3.11-slim
 
 
 WORKDIR /app

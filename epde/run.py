@@ -13,25 +13,25 @@ import pandas as pd
 DATA_DIR = Path("data")
 RESULTS_DIR = Path("results/epde")
 DATASETS = [
-    "ode_data.npy",
-    "vdp_data.npy",
+    # "ode_data.npy",
+    # "vdp_data.npy",
 
     "lorenz_data.npy",
-    "lotka_data.npy",
+    # "lotka_data.npy",
 
-    "burgers_data.mat",
-    "ac_data.npy",
-    "kdv_data.mat",
-    "kdv_periodic_data.npy",
-    "wave_data.csv",
-    "pde_divide_data.npy",
-    "pde_compound_data.npy",
-    "ns_data.mat",
-    "ks_data.mat",
-
-    "burgers_sln_100_data.csv",
-
-    "ODE_simple_discovery"
+    # "burgers_data.mat",
+    # "ac_data.npy",
+    # "kdv_data.mat",
+    # "kdv_periodic_data.npy",
+    # "wave_data.csv",
+    # "pde_divide_data.npy",
+    # "pde_compound_data.npy",
+    # "ns_data.mat",
+    # "ks_data.mat",
+    #
+    # "burgers_sln_100_data.csv",
+    #
+    # "ODE_simple_discovery"
 ]
 
 
@@ -566,7 +566,7 @@ def run_epde(data, x, y, z, t, filename):
                                         preprocessor_kwargs={})
 
         popsize = 8
-        epde_search_obj.set_moeadd_params(population_size=popsize, training_epochs=40)
+        epde_search_obj.set_moeadd_params(population_size=popsize, training_epochs=2)
 
         factors_max_number = {'factors_num': [1, 2], 'probas' : [0.8, 0.2]}
 
@@ -590,7 +590,7 @@ def run_epde(data, x, y, z, t, filename):
                                         preprocessor_kwargs={})
 
         popsize = 8
-        epde_search_obj.set_moeadd_params(population_size=popsize, training_epochs=30)
+        epde_search_obj.set_moeadd_params(population_size=popsize, training_epochs=1)
 
         factors_max_number = {'factors_num': [1, 2], 'probas' : [0.8, 0.2]}
 
