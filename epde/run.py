@@ -60,10 +60,6 @@ def get_coordinate_tensors(coordinate_tensors, t, x, y, z):
 
     elif coordinate_tensors == '3d':
         return np.meshgrid(t, y, x, indexing = 'ij')
-    
-    elif coordinate_tensors == 'wave_data':
-        grid = np.meshgrid(t, x, indexing="ij")
-        return (grid[..., 0], grid[..., 1])
 
 
 def get_additional_tokens(additional_tokens, grid, data, trig_tokens_freq):

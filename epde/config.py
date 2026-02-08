@@ -228,8 +228,7 @@ epde_params = {
         'additional_tokens': None,
         'equation_factors_max_number': {"factors_num": [1, 2], "probas": [0.65, 0.35]},
         'eq_sparsity_interval': (1e-12, 1e-2),
-        'fourier_layers': False,
-        'coordinate_tensors': 'wave_data'
+        'fourier_layers': False
     },
 
     'ns_data.mat': {
@@ -253,7 +252,7 @@ epde_params = {
 
     'ODE_simple_discovery': {
         'population_size': 8,
-        'training_epochs': 20,
+        'training_epochs': 5,
         'use_solver': False,
         'use_pic': True,
         'boundary': 10,
