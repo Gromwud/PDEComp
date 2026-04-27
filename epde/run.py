@@ -1,4 +1,8 @@
 import numpy as np
+import sys
+from pathlib import Path
+sys.path.append(str(Path().absolute()))
+sys.path.append(str(Path().absolute().parent) + '\\EPDE')
 from epde.interface.interface import EpdeSearch
 from epde.interface.prepared_tokens import CustomTokens, CustomEvaluator
 from epde import TrigonometricTokens, GridTokens, CacheStoredTokens
@@ -10,6 +14,7 @@ from datetime import datetime
 
 from data.dataloader import load_data
 from data.config import epde_params
+from data.derivatives import build_epde_derivatives
 
 DATA_DIR = Path("data")
 RESULTS_DIR = Path("results/epde")
@@ -138,6 +143,7 @@ def run_epde(data, x, y, z, t, filename):
     start = time.perf_counter()
 
     params = epde_params[filename]
+    epde_data = data if isinstance(data, list) else [data]
     
     use_solver = params["use_solver"]
     use_pic = params["use_pic"]
@@ -162,6 +168,16 @@ def run_epde(data, x, y, z, t, filename):
 
 
     grid = get_coordinate_tensors(coordinate_tensors, t, x, y, z)        
+    if derivs is None:
+        derivs = build_epde_derivatives(
+            data=epde_data,
+            x=x,
+            y=y,
+            z=z,
+            t=t,
+            variable_names=variable_names,
+            max_deriv_order=max_deriv_order,
+        )
 
     epde_search_obj = EpdeSearch(
         use_solver=use_solver,
@@ -180,13 +196,13 @@ def run_epde(data, x, y, z, t, filename):
                                         training_epochs=training_epochs)
 
     epde_search_obj.fit(
-        data=data,
+        data=epde_data,
         variable_names=variable_names,
         max_deriv_order=max_deriv_order,
         derivs=derivs,
         equation_terms_max_number=equation_terms_max_number,
         data_fun_pow=data_fun_pow,
-        additional_tokens=get_additional_tokens(additional_tokens, grid, data, trig_tokens_freq),
+        additional_tokens=get_additional_tokens(additional_tokens, grid, epde_data, trig_tokens_freq),
         equation_factors_max_number=equation_factors_max_number,
         eq_sparsity_interval=eq_sparsity_interval,
         fourier_layers=fourier_layers
