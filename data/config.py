@@ -273,7 +273,7 @@ epde_params = {
 sindy_params = {
     'ac_data.npy': {
         'library': {'type': 'pde', 'poly_degree': 3, 'poly_include_bias': False, 'derivative_order': 2, 'pde_include_bias': True},
-        'optimizer': {'type': 'STLSQ', 'threshold': 1, 'alpha': 1e-5, 'normalize_columns': True}
+        'optimizer': {'type': 'STLSQ', 'threshold': 1, 'alpha': 1e-5, 'normalize_columns': True, 'coefficient_tol': 1e-3}
     },
     
     'kdv_data.mat': {
@@ -285,7 +285,7 @@ sindy_params = {
         'manual_mode': True,
         'crop': 10,
         'library': {'type': 'pde', 'poly_degree': 2, 'poly_include_bias': False, 'derivative_order': 3, 'pde_include_bias': True},
-        'optimizer': {'type': 'STLSQ', 'threshold': 0.05, 'alpha': 1e-10, 'normalize_columns': False}
+        'optimizer': {'type': 'STLSQ', 'threshold': 0.05, 'alpha': 1e-10, 'normalize_columns': True, 'coefficient_tol': 1e-3}
     },
 
     'burgers_data.mat': {
@@ -295,7 +295,7 @@ sindy_params = {
     
     'burgers_sln_100_data.csv': {
         'library': {'type': 'pde', 'poly_degree': 2, 'poly_include_bias': False, 'derivative_order': 3, 'pde_include_bias': True},
-        'optimizer': {'type': 'STLSQ', 'threshold': 0.5, 'alpha': 1e-10, 'normalize_columns': False}
+        'optimizer': {'type': 'STLSQ', 'threshold': 0.5, 'alpha': 1e-5, 'normalize_columns': False, 'coefficient_tol': 0.1}
     },
 
     'pde_divide_data.npy': {
@@ -309,12 +309,13 @@ sindy_params = {
         'manual_mode': True,
         'crop': 10,
         'library': {'type': 'pde_custom_concat', 'poly_degree': 2, 'poly_include_bias': False, 'derivative_order': 2, 'pde_include_bias': True},
-        'optimizer': {'type': 'STLSQ', 'threshold': 0.01, 'alpha': 1e-10, 'normalize_columns': False}
+        'optimizer': {'type': 'STLSQ', 'threshold': 0.02, 'alpha': 1e-10, 'normalize_columns': False, 'coefficient_tol': 1e-3}
     },
 
     'ks_data.mat': {
+        'crop': 5,
         'library': {'type': 'pde', 'poly_degree': 2, 'poly_include_bias': False, 'derivative_order': 4, 'pde_include_bias': True, 'diff_kwargs': {'periodic': True}},
-        'optimizer': {'type': 'STLSQ', 'threshold': 0.01, 'alpha': 1e-10, 'normalize_columns': False}
+        'optimizer': {'type': 'STLSQ', 'threshold': 0.1, 'alpha': 1e-8, 'normalize_columns': True, 'coefficient_tol': 0.03}
     },
 
     'wave_data.csv': {
@@ -337,26 +338,344 @@ sindy_params = {
     'vdp_data.npy': {
         'manual_mode': True,
         'library': {'type': 'polynomial', 'degree': 3, 'include_bias': True},
-        'optimizer': {'type': 'STLSQ', 'threshold': 1e-6, 'alpha': 1e-10, 'normalize_columns': True, 'coefficient_tol': 0.01}
+        'optimizer': {'type': 'STLSQ', 'threshold': 1e-6, 'alpha': 1e-10, 'normalize_columns': True, 'coefficient_tol': 0.02}
     },
 
     'ode_data.npy': {
         'manual_mode': True,
         'crop': 10,
         'library': {'type': 'polynomial', 'degree': 3, 'include_bias': True},
-        'optimizer': {'type': 'STLSQ', 'threshold': 1e-6, 'alpha': 1e-10, 'normalize_columns': True, 'coefficient_tol': 0.01}
+        'optimizer': {'type': 'STLSQ', 'threshold': 1e-6, 'alpha': 1e-10, 'normalize_columns': True, 'coefficient_tol': 0.05}
     },
 
     'ns_data.mat': {
         'manual_mode': True,
         'library': {'type': 'polynomial', 'degree': 2, 'include_bias': True},
-        'optimizer': {'type': 'STLSQ', 'threshold': 0.01, 'alpha': 1e-10, 'normalize_columns': False},
+        'optimizer': {'type': 'STLSQ', 'threshold': 0.05, 'alpha': 1e-5, 'normalize_columns': True, 'coefficient_tol': 0.005},
         'preprocess': {'moveaxis': True}
     },
 
     'ODE_simple_discovery': {
         'manual_mode': True,
         'library': {'type': 'poly_and_fourier', 'poly_degree': 2, 'poly_include_bias': True, 'n_frequencies': 1},
-        'optimizer': {'type': 'STLSQ', 'threshold': 1e-6, 'alpha': 1e-12, 'normalize_columns': True}
+        'optimizer': {'type': 'STLSQ', 'threshold': 0.1, 'alpha': 1e-12, 'normalize_columns': True}
     }
+}
+
+
+deepmod_params = {
+    'ode_data.npy': {
+        'data_mode': 'ode_scalar',
+        'library_kind': 'ode_second_order',
+        'input_dim': 1,
+        'output_dim': 1,
+        'hidden_layers': [20, 20, 20],
+        'number_of_samples': 192,
+        'train_test_split': 0.8,
+        'threshold': 0.1,
+        'learning_rate': 1e-3,
+        'scheduler_periodicity': 50,
+        'scheduler_patience': 100,
+        'scheduler_delta': 1e-5,
+        'convergence_patience': 100,
+        'convergence_delta': 1e-3,
+        'max_iterations': 1500,
+        'write_iterations': 100,
+        'seed': 0,
+    },
+
+    'vdp_data.npy': {
+        'data_mode': 'ode_scalar',
+        'library_kind': 'vdp_second_order',
+        'input_dim': 1,
+        'output_dim': 1,
+        'hidden_layers': [20, 20, 20],
+        'number_of_samples': 192,
+        'train_test_split': 0.8,
+        'threshold': 0.1,
+        'learning_rate': 1e-3,
+        'scheduler_periodicity': 50,
+        'scheduler_patience': 100,
+        'scheduler_delta': 1e-5,
+        'convergence_patience': 100,
+        'convergence_delta': 1e-3,
+        'max_iterations': 1800,
+        'write_iterations': 100,
+        'seed': 0,
+    },
+
+    'lorenz_data.npy': {
+        'data_mode': 'ode_system',
+        'library_kind': 'lorenz_system',
+        'input_dim': 1,
+        'output_dim': 3,
+        'hidden_layers': [30, 30, 30],
+        'number_of_samples': 500,
+        'train_test_split': 0.8,
+        'threshold': 0.1,
+        'learning_rate': 1e-3,
+        'scheduler_periodicity': 50,
+        'scheduler_patience': 100,
+        'scheduler_delta': 1e-5,
+        'convergence_patience': 100,
+        'convergence_delta': 1e-3,
+        'max_iterations': 1800,
+        'write_iterations': 100,
+        'seed': 0,
+    },
+
+    'lotka_data.npy': {
+        'data_mode': 'ode_system',
+        'library_kind': 'lotka_system',
+        'input_dim': 1,
+        'output_dim': 2,
+        'hidden_layers': [20, 20, 20],
+        'number_of_samples': 120,
+        'train_test_split': 0.8,
+        'threshold': 0.1,
+        'learning_rate': 1e-3,
+        'scheduler_periodicity': 50,
+        'scheduler_patience': 100,
+        'scheduler_delta': 1e-5,
+        'convergence_patience': 100,
+        'convergence_delta': 1e-3,
+        'max_iterations': 1500,
+        'write_iterations': 100,
+        'seed': 0,
+    },
+
+    'burgers_data.mat': {
+        'data_mode': 'pde_1d',
+        'library_kind': 'library1d',
+        'poly_order': 2,
+        'diff_order': 3,
+        'target_names': ['u_t'],
+        'input_dim': 2,
+        'output_dim': 1,
+        'hidden_layers': [20, 20, 20],
+        'number_of_samples': 1000,
+        'train_test_split': 0.8,
+        'threshold': 0.1,
+        'learning_rate': 1e-3,
+        'scheduler_periodicity': 50,
+        'scheduler_patience': 100,
+        'scheduler_delta': 1e-5,
+        'convergence_patience': 100,
+        'convergence_delta': 1e-3,
+        'max_iterations': 1200,
+        'write_iterations': 100,
+        'seed': 0,
+    },
+
+    'ac_data.npy': {
+        'data_mode': 'pde_1d',
+        'library_kind': 'library1d',
+        'poly_order': 3,
+        'diff_order': 2,
+        'target_names': ['u_t'],
+        'input_dim': 2,
+        'output_dim': 1,
+        'hidden_layers': [20, 20, 20],
+        'number_of_samples': 1000,
+        'train_test_split': 0.8,
+        'threshold': 0.1,
+        'learning_rate': 1e-3,
+        'scheduler_periodicity': 50,
+        'scheduler_patience': 100,
+        'scheduler_delta': 1e-5,
+        'convergence_patience': 100,
+        'convergence_delta': 1e-3,
+        'max_iterations': 1200,
+        'write_iterations': 100,
+        'seed': 0,
+    },
+
+    'kdv_data.mat': {
+        'data_mode': 'pde_1d',
+        'library_kind': 'library1d',
+        'poly_order': 2,
+        'diff_order': 3,
+        'target_names': ['u_t'],
+        'input_dim': 2,
+        'output_dim': 1,
+        'hidden_layers': [20, 20, 20],
+        'number_of_samples': 1000,
+        'train_test_split': 0.8,
+        'threshold': 0.1,
+        'learning_rate': 1e-3,
+        'scheduler_periodicity': 50,
+        'scheduler_patience': 100,
+        'scheduler_delta': 1e-5,
+        'convergence_patience': 100,
+        'convergence_delta': 1e-3,
+        'max_iterations': 1200,
+        'write_iterations': 100,
+        'seed': 0,
+    },
+
+    'kdv_periodic_data.npy': {
+        'data_mode': 'pde_1d',
+        'library_kind': 'kdv_periodic',
+        'input_dim': 2,
+        'output_dim': 1,
+        'hidden_layers': [20, 20, 20],
+        'number_of_samples': 1000,
+        'train_test_split': 0.8,
+        'threshold': 0.1,
+        'learning_rate': 1e-3,
+        'scheduler_periodicity': 50,
+        'scheduler_patience': 100,
+        'scheduler_delta': 1e-5,
+        'convergence_patience': 100,
+        'convergence_delta': 1e-3,
+        'max_iterations': 1200,
+        'write_iterations': 100,
+        'seed': 0,
+    },
+
+    'wave_data.csv': {
+        'data_mode': 'pde_1d',
+        'library_kind': 'wave_second_order',
+        'input_dim': 2,
+        'output_dim': 1,
+        'hidden_layers': [20, 20, 20],
+        'number_of_samples': 800,
+        'train_test_split': 0.8,
+        'threshold': 0.1,
+        'learning_rate': 1e-3,
+        'scheduler_periodicity': 50,
+        'scheduler_patience': 100,
+        'scheduler_delta': 1e-5,
+        'convergence_patience': 100,
+        'convergence_delta': 1e-3,
+        'max_iterations': 1200,
+        'write_iterations': 100,
+        'seed': 0,
+    },
+
+    'pde_divide_data.npy': {
+        'data_mode': 'pde_1d',
+        'library_kind': 'pde_divide',
+        'input_dim': 2,
+        'output_dim': 1,
+        'hidden_layers': [20, 20, 20],
+        'number_of_samples': 1000,
+        'train_test_split': 0.8,
+        'threshold': 0.1,
+        'learning_rate': 1e-3,
+        'scheduler_periodicity': 50,
+        'scheduler_patience': 100,
+        'scheduler_delta': 1e-5,
+        'convergence_patience': 100,
+        'convergence_delta': 1e-3,
+        'max_iterations': 1200,
+        'write_iterations': 100,
+        'seed': 0,
+    },
+
+    'pde_compound_data.npy': {
+        'data_mode': 'pde_1d',
+        'library_kind': 'pde_compound',
+        'input_dim': 2,
+        'output_dim': 1,
+        'hidden_layers': [20, 20, 20],
+        'number_of_samples': 1000,
+        'train_test_split': 0.8,
+        'threshold': 0.1,
+        'learning_rate': 1e-3,
+        'scheduler_periodicity': 50,
+        'scheduler_patience': 100,
+        'scheduler_delta': 1e-5,
+        'convergence_patience': 100,
+        'convergence_delta': 1e-3,
+        'max_iterations': 1200,
+        'write_iterations': 100,
+        'seed': 0,
+    },
+
+    'ns_data.mat': {
+        'data_mode': 'pde_2d_system',
+        'library_kind': 'navier_stokes',
+        'input_dim': 3,
+        'output_dim': 3,
+        'hidden_layers': [30, 30, 30],
+        'number_of_samples': 600,
+        'train_test_split': 0.8,
+        'threshold': 0.1,
+        'learning_rate': 1e-3,
+        'scheduler_periodicity': 50,
+        'scheduler_patience': 100,
+        'scheduler_delta': 1e-5,
+        'convergence_patience': 100,
+        'convergence_delta': 1e-3,
+        'max_iterations': 800,
+        'write_iterations': 100,
+        'seed': 0,
+    },
+
+    'ks_data.mat': {
+        'data_mode': 'pde_1d',
+        'library_kind': 'library1d',
+        'poly_order': 2,
+        'diff_order': 4,
+        'target_names': ['u_t'],
+        'input_dim': 2,
+        'output_dim': 1,
+        'hidden_layers': [20, 20, 20],
+        'number_of_samples': 1000,
+        'train_test_split': 0.8,
+        'threshold': 0.1,
+        'learning_rate': 1e-3,
+        'scheduler_periodicity': 50,
+        'scheduler_patience': 100,
+        'scheduler_delta': 1e-5,
+        'convergence_patience': 100,
+        'convergence_delta': 1e-3,
+        'max_iterations': 1200,
+        'write_iterations': 100,
+        'seed': 0,
+    },
+
+    'burgers_sln_100_data.csv': {
+        'data_mode': 'pde_1d',
+        'library_kind': 'library1d',
+        'poly_order': 2,
+        'diff_order': 3,
+        'target_names': ['u_t'],
+        'input_dim': 2,
+        'output_dim': 1,
+        'hidden_layers': [20, 20, 20],
+        'number_of_samples': 800,
+        'train_test_split': 0.8,
+        'threshold': 0.1,
+        'learning_rate': 1e-3,
+        'scheduler_periodicity': 50,
+        'scheduler_patience': 100,
+        'scheduler_delta': 1e-5,
+        'convergence_patience': 100,
+        'convergence_delta': 1e-3,
+        'max_iterations': 1000,
+        'write_iterations': 100,
+        'seed': 0,
+    },
+
+    'ODE_simple_discovery': {
+        'data_mode': 'ode_scalar',
+        'library_kind': 'simple_trig_ode',
+        'input_dim': 1,
+        'output_dim': 1,
+        'hidden_layers': [30, 30, 30],
+        'number_of_samples': 180,
+        'train_test_split': 0.8,
+        'threshold': 0.1,
+        'learning_rate': 1e-3,
+        'scheduler_periodicity': 50,
+        'scheduler_patience': 100,
+        'scheduler_delta': 1e-5,
+        'convergence_patience': 100,
+        'convergence_delta': 1e-3,
+        'max_iterations': 2000,
+        'write_iterations': 100,
+        'seed': 0,
+    },
 }

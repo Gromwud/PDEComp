@@ -114,11 +114,12 @@ def build_optimizer(opt_config):
 
     if opt_type == "SR3":
         return ps.SR3(
+            threshold=opt_config.get("threshold", 0.1),
             max_iter=opt_config.get("max_iter", 30),
             tol=opt_config.get("tol", 1e-5),
             normalize_columns=opt_config.get("normalize_columns", False),
-            reg_weight_lam=opt_config.get("reg_weight_lam", opt_config.get("threshold", 0.1)),
-            regularizer=opt_config.get("regularizer", opt_config.get("thresholder", "L0")),
+            thresholder=opt_config.get("thresholder", opt_config.get("regularizer", "L0")),
+            nu=opt_config.get("nu", 1.0),
         )
 
     raise ValueError(f"Unknown optimizer type: {opt_type}")
@@ -339,8 +340,27 @@ def fit_manual_system(feature_matrix, target_vector, feature_names, target_name,
     }
 
 
+def manual_library_settings(params, default_polynomial_degree=3, default_derivative_order=4):
+    lib_config = params.get("library", {})
+    return {
+        "polynomial_degree": lib_config.get(
+            "manual_poly_degree",
+            lib_config.get("poly_degree", lib_config.get("degree", default_polynomial_degree)),
+        ),
+        "derivative_order": lib_config.get(
+            "manual_derivative_order",
+            lib_config.get("derivative_order", default_derivative_order),
+        ),
+        "include_bias": lib_config.get(
+            "manual_include_bias",
+            lib_config.get("include_bias", True),
+        ),
+    }
+
+
 def run_manual_dataset(data, x, y, z, t, filename, params):
     crop = params.get("crop", 0)
+    library_settings = manual_library_settings(params)
 
     if isinstance(data, list):
         data = np.array(data)
@@ -435,51 +455,84 @@ def run_manual_dataset(data, x, y, z, t, filename, params):
         u_t = get_derivative(derivatives, "u", "t", 1)
         v_t = get_derivative(derivatives, "v", "t", 1)
         u_x = get_derivative(derivatives, "u", "x", 1)
+        u_y = get_derivative(derivatives, "u", "y", 1)
+        v_x = get_derivative(derivatives, "v", "x", 1)
+        v_y = get_derivative(derivatives, "v", "y", 1)
         u_xx = get_derivative(derivatives, "u", "x", 2)
         u_yy = get_derivative(derivatives, "u", "y", 2)
         v_xx = get_derivative(derivatives, "v", "x", 2)
         v_yy = get_derivative(derivatives, "v", "y", 2)
-        features, feature_names = build_generated_manual_features(
-            bundle=derivatives,
-            crop_slices=crop_slices,
-            polynomial_variables=["u", "v", "p"],
-            derivative_variables=["u", "v", "p"],
-            derivative_axes=["x", "y"],
-            polynomial_degree=1,
-            derivative_order=2,
-            custom_tokens=[
+        p_x = get_derivative(derivatives, "p", "x", 1)
+        p_y = get_derivative(derivatives, "p", "y", 1)
+        p_xx = get_derivative(derivatives, "p", "x", 2)
+        p_yy = get_derivative(derivatives, "p", "y", 2)
+        u_features, u_feature_names = build_feature_matrix(
+            [
+                ("p_x", p_x),
+                ("p_xx", p_xx),
+                ("p_yy", p_yy),
+                ("u u_x", u * u_x),
+                ("v u_y", v * u_y),
                 ("(u_xx + u_yy)", u_xx + u_yy),
                 ("(v_xx + v_yy)", v_xx + v_yy),
             ],
+            crop_slices,
+        )
+        v_features, v_feature_names = build_feature_matrix(
+            [
+                ("p_y", p_y),
+                ("p_xx", p_xx),
+                ("p_yy", p_yy),
+                ("u v_x", u * v_x),
+                ("v v_y", v * v_y),
+                ("(u_xx + u_yy)", u_xx + u_yy),
+                ("(v_xx + v_yy)", v_xx + v_yy),
+            ],
+            crop_slices,
         )
 
-        optimizer = build_optimizer(params["optimizer"])
-        optimizer.fit(features, crop_and_flatten(u_t, crop_slices))
-        u_coefficients = np.asarray(optimizer.coef_).reshape(-1)
-        print_sparse_equation("u_t", feature_names, u_coefficients)
+        u_result = fit_manual_system(
+            u_features,
+            crop_and_flatten(u_t, crop_slices),
+            u_feature_names,
+            "u_t",
+            filename,
+            params["optimizer"],
+        )
+        v_result = fit_manual_system(
+            v_features,
+            crop_and_flatten(v_t, crop_slices),
+            v_feature_names,
+            "v_t",
+            filename,
+            params["optimizer"],
+        )
 
-        optimizer = build_optimizer(params["optimizer"])
-        optimizer.fit(features, crop_and_flatten(v_t, crop_slices))
-        v_coefficients = np.asarray(optimizer.coef_).reshape(-1)
-        print_sparse_equation("v_t", feature_names, v_coefficients)
-
-        optimizer = build_optimizer(params["optimizer"])
-        optimizer.fit(features, crop_and_flatten(u_x, crop_slices))
-        continuity_coefficients = np.asarray(optimizer.coef_).reshape(-1)
-        print_sparse_equation("u_x", feature_names, continuity_coefficients)
+        continuity_features, continuity_names = build_feature_matrix(
+            [("v_y", v_y)],
+            crop_slices,
+        )
+        continuity_result = fit_manual_system(
+            continuity_features,
+            crop_and_flatten(u_x, crop_slices),
+            continuity_names,
+            "u_x",
+            filename,
+            params["optimizer"],
+        )
 
         return {
             "dataset": filename.split(".")[0],
             "targets": ["u_t", "v_t", "u_x"],
             "coefficients": [
-                u_coefficients.tolist(),
-                v_coefficients.tolist(),
-                continuity_coefficients.tolist(),
+                u_result["coefficients"][0],
+                v_result["coefficients"][0],
+                continuity_result["coefficients"][0],
             ],
             "features": [
-                feature_names,
-                feature_names,
-                feature_names,
+                u_feature_names,
+                v_feature_names,
+                continuity_names,
             ],
         }
 
@@ -495,8 +548,9 @@ def run_manual_dataset(data, x, y, z, t, filename, params):
             polynomial_variables=["u"],
             derivative_variables=["u"],
             derivative_axes=["x"],
-            polynomial_degree=3,
-            derivative_order=4,
+            polynomial_degree=library_settings["polynomial_degree"],
+            derivative_order=library_settings["derivative_order"],
+            include_bias=library_settings["include_bias"],
         )
         return fit_manual_system(
             features,
