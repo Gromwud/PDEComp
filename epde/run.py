@@ -1,8 +1,5 @@
 import numpy as np
 import sys
-from pathlib import Path
-sys.path.append(str(Path().absolute()))
-sys.path.append(str(Path().absolute().parent) + '\\EPDE')
 from epde.interface.interface import EpdeSearch
 from epde.interface.prepared_tokens import CustomTokens, CustomEvaluator
 from epde import TrigonometricTokens, GridTokens, CacheStoredTokens

@@ -110,10 +110,6 @@ def get_derivative(bundle, variable_name, axis_name, order):
     return bundle["variables"][variable_name]["derivatives"][axis_orders(bundle, axis_name, order)]
 
 
-def get_multi_derivative(bundle, variable_name, orders):
-    return bundle["variables"][variable_name]["derivatives"][tuple(orders)]
-
-
 def build_epde_derivatives(data, x, y, z, t, variable_names, max_deriv_order):
     if isinstance(data, list):
         arrays = [np.asarray(item, dtype=float) for item in data]

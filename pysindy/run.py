@@ -19,7 +19,6 @@ from data.derivatives import (
 )
 
 
-DATA_DIR = Path("data")
 RESULTS_DIR = Path("results/pysindy")
 DATASETS = [
     "ode_data.npy",
@@ -135,10 +134,6 @@ def prepare_standard_data(data, x, t, filename):
     elif len(data.shape) == 2:
         data = data.T.reshape(len(x), len(t), 1)
     return data
-
-
-def finite_difference(data, step, axis, order=1):
-    return numpy_gradient_derivative(data, step, axis=axis, order=order)
 
 
 def build_crop_slices(shape, crop):
