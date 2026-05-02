@@ -1,5 +1,8 @@
 import numpy as np
 import sys
+from pathlib import Path
+sys.path.append(str(Path().absolute()))
+sys.path.append(str(Path().absolute().parent) + '\\EPDE')
 from epde.interface.interface import EpdeSearch
 from epde.interface.prepared_tokens import CustomTokens, CustomEvaluator
 from epde import TrigonometricTokens, GridTokens, CacheStoredTokens
@@ -16,25 +19,25 @@ from data.derivatives import build_epde_derivatives
 DATA_DIR = Path("data")
 RESULTS_DIR = Path("results/epde")
 DATASETS = [
-    "ode_data.npy",
-    "vdp_data.npy",
+    # "ode_data.npy",
+    # "vdp_data.npy",
 
-    "lorenz_data.npy",
-    "lotka_data.npy",
+    # "lorenz_data.npy",
+    # "lotka_data.npy",
 
-    "burgers_data.mat",
-    "ac_data.npy",
-    "kdv_data.mat",
-    "kdv_periodic_data.npy",
-    "wave_data.csv",
-    "pde_divide_data.npy",
+    # "burgers_data.mat",
+    # "ac_data.npy",
+    # "kdv_data.mat",
+    # "kdv_periodic_data.npy",
+    # "wave_data.csv",
+    # "pde_divide_data.npy",
     "pde_compound_data.npy",
-    "ns_data.mat",
-    "ks_data.mat",
+    # "ns_data.mat",
+    # "ks_data.mat",
     
-    "burgers_sln_100_data.csv",
+    # "burgers_sln_100_data.csv",
     
-    "ODE_simple_discovery"
+    # "ODE_simple_discovery"
 ]
 
 

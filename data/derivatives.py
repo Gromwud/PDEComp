@@ -111,6 +111,7 @@ def get_derivative(bundle, variable_name, axis_name, order):
 
 
 def build_epde_derivatives(data, x, y, z, t, variable_names, max_deriv_order):
+    """Build EPDE-compatible flattened derivative matrices."""
     if isinstance(data, list):
         arrays = [np.asarray(item, dtype=float) for item in data]
     else:
@@ -122,9 +123,9 @@ def build_epde_derivatives(data, x, y, z, t, variable_names, max_deriv_order):
 
     for values in arrays:
         derivatives = [
-            compute_multi_derivative(values, axes, orders)
+            compute_multi_derivative(values, axes, orders).ravel()
             for orders in derivative_multiindices(max_orders, include_identity=False)
         ]
-        epde_derivs.append(np.stack(derivatives, axis=-1))
+        epde_derivs.append(np.column_stack(derivatives))
 
     return epde_derivs

@@ -141,7 +141,7 @@ def generate_polynomial_tokens(fields, variable_names, degree=3, include_bias=Tr
     return specs
 
 
-def generate_derivative_tokens(bundle, variable_names, axis_names, max_order=4):
+def generate_derivative_tokens(bundle, variable_names, axis_names, max_deriv_order):
     """Generate derivative feature tensors for selected variables and axes."""
 
     specs = []
@@ -151,7 +151,7 @@ def generate_derivative_tokens(bundle, variable_names, axis_names, max_order=4):
                 continue
             axis_index = bundle["axis_names"].index(axis_name)
             available_order = bundle["max_orders"][axis_index]
-            axis_max_order = axis_order_limit(max_order, axis_name, default=0)
+            axis_max_order = axis_order_limit(max_deriv_order, axis_name, bundle["axis_names"])
             for order in range(1, min(axis_max_order, available_order) + 1):
                 orders = [0] * len(bundle["axis_names"])
                 orders[axis_index] = order
@@ -185,10 +185,9 @@ def default_derivative_axes(axis_names):
     return [axis_name for axis_name in axis_names if axis_name != "t"]
 
 
-def axis_order_limit(derivative_order, axis_name, default=0):
-    if isinstance(derivative_order, dict):
-        return derivative_order.get(axis_name, derivative_order.get("*", default))
-    return derivative_order
+def axis_order_limit(max_deriv_order, axis_name, axis_names):
+    axis_index = axis_names.index(axis_name)
+    return max_deriv_order[axis_index]
 
 
 def feature_field(bundle, field_name):
@@ -211,7 +210,7 @@ def generate_feature_library(
     derivative_variables,
     derivative_axes,
     polynomial_degree=3,
-    derivative_order=4,
+    max_deriv_order=None,
     custom_tokens=None,
     coordinate_variables=None,
     include_bias=True,
@@ -235,7 +234,7 @@ def generate_feature_library(
         bundle,
         derivative_variables,
         derivative_axes,
-        max_order=derivative_order,
+        max_deriv_order=max_deriv_order,
     )
     coordinate_specs = [
         (coordinate_name, feature_field(bundle, coordinate_name))
@@ -300,8 +299,8 @@ def build_ns_features(bundle, crop_slices, params, target_variable):
     velocity_variables = lib_config.get("ns_velocity_variables", ["u", "v"])
     pressure_variable = lib_config.get("ns_pressure_variable", "p")
     axes = lib_config.get("ns_derivative_axes", ["x", "y"])
-    polynomial_degree = lib_config.get("ns_velocity_poly_degree", 2)
-    derivative_order = lib_config.get("ns_derivative_order", 2)
+    polynomial_degree = lib_config["data_fun_pow"]
+    max_deriv_order = lib_config["max_deriv_order"]
 
     velocity_fields = {
         variable_name: bundle["variables"][variable_name]["values"]
@@ -319,7 +318,7 @@ def build_ns_features(bundle, crop_slices, params, target_variable):
         bundle,
         velocity_variables + [pressure_variable],
         axes,
-        max_order=derivative_order,
+        max_deriv_order=max_deriv_order,
     )
 
     first_velocity_derivatives = repeated_axis_derivative_names(
@@ -410,16 +409,31 @@ def fit_sparse_system(feature_matrix, target_vector, feature_names, target_name,
     }
 
 
-def library_settings(params, default_polynomial_degree=3, default_derivative_order=4):
+def max_factor_count(lib_config):
+    """Return the largest EPDE-style number of factors in one term."""
+
+    factors = lib_config.get("equation_factors_max_number", 1)
+    if isinstance(factors, dict):
+        return max(factors.get("factors_num", [1]))
+    return int(factors)
+
+
+def library_settings(params):
     """Normalize library degree, derivative order, and bias settings."""
 
     lib_config = params.get("library", {})
+    data_fun_pow = lib_config["data_fun_pow"]
+    polynomial_degree = data_fun_pow
+    if (
+        lib_config.get("type") == "polynomial"
+        and not lib_config.get("derivative_axes")
+        and len(lib_config.get("variable_names", [])) > 1
+    ):
+        polynomial_degree = data_fun_pow * max_factor_count(lib_config)
+
     return {
-        "polynomial_degree": lib_config.get(
-            "poly_degree",
-            lib_config.get("degree", default_polynomial_degree),
-        ),
-        "derivative_order": lib_config.get("derivative_order", default_derivative_order),
+        "polynomial_degree": polynomial_degree,
+        "max_deriv_order": lib_config["max_deriv_order"],
         "include_bias": lib_config.get(
             "include_bias",
             lib_config.get("poly_include_bias", lib_config.get("pde_include_bias", True)),
@@ -438,17 +452,11 @@ def build_configured_features(
     include_polynomials=True,
     include_derivatives=True,
     include_products=True,
-    default_polynomial_degree=3,
-    default_derivative_order=4,
 ):
     """Build the generic configured feature matrix."""
 
     lib_config = params.get("library", {})
-    settings = library_settings(
-        params,
-        default_polynomial_degree=default_polynomial_degree,
-        default_derivative_order=default_derivative_order,
-    )
+    settings = library_settings(params)
     feature_specs = generate_feature_library(
         bundle=bundle,
         polynomial_variables=(
@@ -467,7 +475,7 @@ def build_configured_features(
             else derivative_axes
         ),
         polynomial_degree=settings["polynomial_degree"],
-        derivative_order=settings["derivative_order"],
+        max_deriv_order=settings["max_deriv_order"],
         custom_tokens=custom_tokens,
         coordinate_variables=lib_config.get("coordinate_variables", []),
         include_bias=settings["include_bias"],
@@ -558,34 +566,11 @@ def normalize_data_arrays(data):
     return [np.asarray(data, dtype=float)]
 
 
-def max_orders(data_shape, params):
+def configured_max_deriv_order(data_shape, params):
     """Choose derivative orders to precompute for targets and features."""
 
     lib_config = params.get("library", {})
-    if "max_orders" in lib_config:
-        return tuple(lib_config["max_orders"][:len(data_shape)])
-
-    targets = params.get("targets", [])
-    axis_names = axis_names_for_shape(data_shape)
-    derivative_axes = lib_config.get("derivative_axes", default_derivative_axes(axis_names))
-    derivative_order = lib_config.get(
-        "derivative_order",
-        lib_config.get("ns_derivative_order", 0),
-    )
-    orders = []
-    for axis_name in axis_names:
-        target_order = max(
-            [target.get("order", 1) for target in targets if target.get("axis", "t") == axis_name] + [0]
-        )
-        configured_order = (
-            axis_order_limit(derivative_order, axis_name, default=0)
-            if axis_name in derivative_axes
-            else 0
-        )
-        if axis_name == "t" and not targets:
-            target_order = 1
-        orders.append(max(target_order, configured_order))
-    return tuple(orders)
+    return tuple(lib_config["max_deriv_order"][:len(data_shape)])
 
 
 def default_targets(variable_names):
@@ -634,6 +619,28 @@ def build_target_features(target, params, bundle, crop_slices, data_shape, x, t)
     )
 
 
+def remove_target_from_features(features, feature_names, target_name):
+    """Drop the left-hand target token from the right-hand library."""
+
+    def uses_target(feature_name):
+        tokens = (
+            feature_name
+            .replace("(", " ")
+            .replace(")", " ")
+            .replace("+", " ")
+            .split()
+        )
+        return target_name in tokens
+
+    keep_indexes = [
+        index for index, feature_name in enumerate(feature_names)
+        if not uses_target(feature_name)
+    ]
+    if len(keep_indexes) == len(feature_names):
+        return features, feature_names
+    return features[:, keep_indexes], [feature_names[index] for index in keep_indexes]
+
+
 def run_sindy(data, x, y, z, t, filename):
     """Run PySINDy sparse discovery for one configured dataset."""
 
@@ -650,7 +657,7 @@ def run_sindy(data, x, y, z, t, filename):
         z=z,
         t=t,
         variable_names=variable_names,
-        max_orders=max_orders(data_arrays[0].shape, params),
+        max_orders=configured_max_deriv_order(data_arrays[0].shape, params),
     )
     crop_slices = build_crop_slices(data_arrays[0].shape, params.get("crop", 0))
 
@@ -673,6 +680,11 @@ def run_sindy(data, x, y, z, t, filename):
             data_arrays[0].shape,
             x,
             t,
+        )
+        features, feature_names = remove_target_from_features(
+            features,
+            feature_names,
+            target_name,
         )
         result = fit_sparse_system(
             features,
