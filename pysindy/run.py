@@ -37,13 +37,6 @@ DATASETS = [
     "burgers_sln_100_data.csv",
     "ODE_simple_discovery",
 ]
-GENERATED_MANUAL_DATASETS = {
-    "burgers_data.mat",
-    "ac_data.npy",
-    "kdv_data.mat",
-    "ks_data.mat",
-    "burgers_sln_100_data.csv",
-}
 
 
 def save_combined_results(results):
@@ -53,52 +46,6 @@ def save_combined_results(results):
 
     with open(output_file, "w") as handle:
         json.dump([results], handle, indent=2)
-
-
-def build_pde_library(lib_config, x):
-    return ps.PDELibrary(
-        derivative_order=lib_config.get("derivative_order", 3),
-        spatial_grid=x,
-        include_bias=lib_config.get("pde_include_bias", True),
-        function_library=ps.PolynomialLibrary(
-            degree=lib_config.get("poly_degree", 2),
-            include_bias=lib_config.get("poly_include_bias", False),
-        ),
-        differentiation_method=ps.FiniteDifference,
-    )
-
-
-def build_library(lib_config, x):
-    lib_type = lib_config.get("type", "polynomial")
-
-    if lib_type == "polynomial":
-        return ps.PolynomialLibrary(
-            degree=lib_config.get("degree", 2),
-            include_bias=lib_config.get("include_bias", True),
-        )
-
-    if lib_type == "pde":
-        return build_pde_library(lib_config, x)
-
-    if lib_type == "pde_custom_concat":
-        base_lib = build_pde_library(lib_config, x)
-        functions = [lambda val: 1 / val]
-        function_names = [lambda val: "1/" + val]
-        custom_lib = ps.CustomLibrary(
-            library_functions=functions,
-            function_names=function_names,
-        ) * base_lib
-        return ps.ConcatLibrary([custom_lib, base_lib])
-
-    if lib_type == "poly_and_fourier":
-        poly_lib = ps.PolynomialLibrary(
-            degree=lib_config.get("poly_degree", 2),
-            include_bias=lib_config.get("poly_include_bias", True),
-        )
-        trig_lib = ps.FourierLibrary(n_frequencies=lib_config.get("n_frequencies", 1))
-        return poly_lib + trig_lib
-
-    raise ValueError(f"Unknown library type: {lib_type}")
 
 
 def build_optimizer(opt_config):
@@ -122,18 +69,6 @@ def build_optimizer(opt_config):
         )
 
     raise ValueError(f"Unknown optimizer type: {opt_type}")
-
-
-def prepare_standard_data(data, x, t, filename):
-    if isinstance(data, list):
-        data = np.array(data)
-    if len(data.shape) == 1:
-        data = data.T.reshape(len(t), 1)
-    elif filename in ["lotka_data.npy", "lorenz_data.npy", "ODE_simple_discovery"]:
-        data = data.T
-    elif len(data.shape) == 2:
-        data = data.T.reshape(len(x), len(t), 1)
-    return data
 
 
 def build_crop_slices(shape, crop):
@@ -203,7 +138,8 @@ def generate_derivative_tokens(bundle, variable_names, axis_names, max_order=4):
                 continue
             axis_index = bundle["axis_names"].index(axis_name)
             available_order = bundle["max_orders"][axis_index]
-            for order in range(1, min(max_order, available_order) + 1):
+            axis_max_order = axis_order_limit(max_order, axis_name, default=0)
+            for order in range(1, min(axis_max_order, available_order) + 1):
                 orders = [0] * len(bundle["axis_names"])
                 orders[axis_index] = order
                 name = derivative_name(variable_name, tuple(orders), bundle["axis_names"])
@@ -222,7 +158,39 @@ def deduplicate_feature_specs(feature_specs):
     return deduplicated
 
 
-def generate_manual_library(
+def axis_names_for_shape(data_shape):
+    if len(data_shape) == 1:
+        return ["t"]
+    if len(data_shape) == 2:
+        return ["t", "x"]
+    if len(data_shape) == 3:
+        return ["t", "y", "x"]
+    raise ValueError(f"Unsupported data dimensionality: {len(data_shape)}")
+
+
+def default_derivative_axes(axis_names):
+    return [axis_name for axis_name in axis_names if axis_name != "t"]
+
+
+def axis_order_limit(derivative_order, axis_name, default=0):
+    if isinstance(derivative_order, dict):
+        return derivative_order.get(axis_name, derivative_order.get("*", default))
+    return derivative_order
+
+
+def feature_field(bundle, field_name):
+    if field_name in bundle["variables"]:
+        return bundle["variables"][field_name]["values"]
+
+    for axis_name, axis_index, grid in bundle["axes"]:
+        if field_name == axis_name:
+            shape = next(iter(bundle["variables"].values()))["values"].shape
+            return broadcast_axis(grid, shape, axis_index)
+
+    raise KeyError(f"Unknown library field {field_name!r}")
+
+
+def generate_feature_library(
     bundle,
     polynomial_variables,
     derivative_variables,
@@ -230,13 +198,14 @@ def generate_manual_library(
     polynomial_degree=3,
     derivative_order=4,
     custom_tokens=None,
+    coordinate_variables=None,
     include_bias=True,
     include_polynomials=True,
     include_derivatives=True,
     include_products=True,
 ):
     fields = {
-        variable_name: bundle["variables"][variable_name]["values"]
+        variable_name: feature_field(bundle, variable_name)
         for variable_name in polynomial_variables
     }
     polynomial_specs = generate_polynomial_tokens(
@@ -251,6 +220,10 @@ def generate_manual_library(
         derivative_axes,
         max_order=derivative_order,
     )
+    coordinate_specs = [
+        (coordinate_name, feature_field(bundle, coordinate_name))
+        for coordinate_name in (coordinate_variables or [])
+    ]
 
     feature_specs = []
     if include_polynomials:
@@ -266,40 +239,110 @@ def generate_manual_library(
                     f"{polynomial_name} {derivative_name_}",
                     polynomial_values * derivative_values,
                 ))
+        for coordinate_name, coordinate_values in coordinate_specs:
+            for derivative_name_, derivative_values in derivative_specs:
+                feature_specs.append((
+                    f"{coordinate_name} {derivative_name_}",
+                    coordinate_values * derivative_values,
+                ))
     if custom_tokens:
         feature_specs.extend(custom_tokens)
 
     return deduplicate_feature_specs(feature_specs)
 
 
-def build_generated_manual_features(
-    bundle,
-    crop_slices,
-    polynomial_variables,
-    derivative_variables,
-    derivative_axes,
-    polynomial_degree=3,
-    derivative_order=4,
-    custom_tokens=None,
-    include_bias=True,
-    include_polynomials=True,
-    include_derivatives=True,
-    include_products=True,
-):
-    feature_specs = generate_manual_library(
-        bundle=bundle,
-        polynomial_variables=polynomial_variables,
-        derivative_variables=derivative_variables,
-        derivative_axes=derivative_axes,
-        polynomial_degree=polynomial_degree,
-        derivative_order=derivative_order,
-        custom_tokens=custom_tokens,
-        include_bias=include_bias,
-        include_polynomials=include_polynomials,
-        include_derivatives=include_derivatives,
-        include_products=include_products,
+def variable_power_specs(variable_name, values, degree):
+    specs = []
+    for power in range(1, degree + 1):
+        name = variable_name if power == 1 else f"{variable_name}^{power}"
+        specs.append((name, values ** power))
+    return specs
+
+
+def repeated_axis_derivative_names(variable_names, axes, order):
+    return {
+        f"{variable_name}_{axis_name * order}"
+        for variable_name in variable_names
+        for axis_name in axes
+    }
+
+
+def second_derivative_sum_feature(bundle, variable_name, axes):
+    name = " + ".join(f"{variable_name}_{axis_name}{axis_name}" for axis_name in axes)
+    values = sum(
+        get_derivative(bundle, variable_name, axis_name, 2)
+        for axis_name in axes
     )
-    return build_feature_matrix(feature_specs, crop_slices)
+    return f"({name})", values
+
+
+def build_ns_features(bundle, crop_slices, params, target_variable):
+    lib_config = params.get("library", {})
+    velocity_variables = lib_config.get("ns_velocity_variables", ["u", "v"])
+    pressure_variable = lib_config.get("ns_pressure_variable", "p")
+    axes = lib_config.get("ns_derivative_axes", ["x", "y"])
+    polynomial_degree = lib_config.get("ns_velocity_poly_degree", 2)
+    derivative_order = lib_config.get("ns_derivative_order", 2)
+
+    velocity_fields = {
+        variable_name: bundle["variables"][variable_name]["values"]
+        for variable_name in velocity_variables
+    }
+
+    feature_specs = generate_polynomial_tokens(
+        velocity_fields,
+        velocity_variables,
+        degree=polynomial_degree,
+        include_bias=False,
+    )
+
+    derivative_specs = generate_derivative_tokens(
+        bundle,
+        velocity_variables + [pressure_variable],
+        axes,
+        max_order=derivative_order,
+    )
+
+    first_velocity_derivatives = repeated_axis_derivative_names(
+        velocity_variables,
+        axes,
+        order=1,
+    )
+    derivative_specs = [
+        (name, values)
+        for name, values in derivative_specs
+        if name not in first_velocity_derivatives
+    ]
+
+    second_velocity_derivatives = repeated_axis_derivative_names(
+        velocity_variables,
+        axes,
+        order=2,
+    )
+    derivative_specs = [
+        (name, values)
+        for name, values in derivative_specs
+        if name not in second_velocity_derivatives
+    ]
+
+    feature_specs.extend(derivative_specs)
+
+    for velocity_variable, axis_name in zip(velocity_variables, axes):
+        velocity_values = bundle["variables"][velocity_variable]["values"]
+        target_derivative = get_derivative(bundle, target_variable, axis_name, 1)
+        feature_specs.append((
+            f"{velocity_variable} {target_variable}_{axis_name}",
+            velocity_values * target_derivative,
+        ))
+
+    for variable_name in velocity_variables:
+        feature_specs.append(second_derivative_sum_feature(
+            bundle,
+            variable_name,
+            axes,
+        ))
+
+    return build_feature_matrix(deduplicate_feature_specs(feature_specs), crop_slices)
 
 
 def print_sparse_equation(target_name, feature_names, coefficients, precision=4):
@@ -314,7 +357,7 @@ def print_sparse_equation(target_name, feature_names, coefficients, precision=4)
     print(f"{target_name} = {rhs}")
 
 
-def fit_manual_system(feature_matrix, target_vector, feature_names, target_name, filename, opt_config):
+def fit_sparse_system(feature_matrix, target_vector, feature_names, target_name, filename, opt_config):
     optimizer = build_optimizer(opt_config)
     optimizer.fit(feature_matrix, target_vector)
 
@@ -335,362 +378,274 @@ def fit_manual_system(feature_matrix, target_vector, feature_names, target_name,
     }
 
 
-def manual_library_settings(params, default_polynomial_degree=3, default_derivative_order=4):
+def library_settings(params, default_polynomial_degree=3, default_derivative_order=4):
     lib_config = params.get("library", {})
     return {
         "polynomial_degree": lib_config.get(
-            "manual_poly_degree",
-            lib_config.get("poly_degree", lib_config.get("degree", default_polynomial_degree)),
+            "poly_degree",
+            lib_config.get("degree", default_polynomial_degree),
         ),
-        "derivative_order": lib_config.get(
-            "manual_derivative_order",
-            lib_config.get("derivative_order", default_derivative_order),
-        ),
+        "derivative_order": lib_config.get("derivative_order", default_derivative_order),
         "include_bias": lib_config.get(
-            "manual_include_bias",
-            lib_config.get("include_bias", True),
+            "include_bias",
+            lib_config.get("poly_include_bias", lib_config.get("pde_include_bias", True)),
         ),
     }
 
 
-def run_manual_dataset(data, x, y, z, t, filename, params):
-    crop = params.get("crop", 0)
-    library_settings = manual_library_settings(params)
+def build_configured_features(
+    params,
+    bundle,
+    crop_slices,
+    polynomial_variables=None,
+    derivative_variables=None,
+    derivative_axes=None,
+    custom_tokens=None,
+    include_polynomials=True,
+    include_derivatives=True,
+    include_products=True,
+    default_polynomial_degree=3,
+    default_derivative_order=4,
+):
+    lib_config = params.get("library", {})
+    settings = library_settings(
+        params,
+        default_polynomial_degree=default_polynomial_degree,
+        default_derivative_order=default_derivative_order,
+    )
+    feature_specs = generate_feature_library(
+        bundle=bundle,
+        polynomial_variables=(
+            lib_config.get("polynomial_variables", ["u"])
+            if polynomial_variables is None
+            else polynomial_variables
+        ),
+        derivative_variables=(
+            lib_config.get("derivative_variables", ["u"])
+            if derivative_variables is None
+            else derivative_variables
+        ),
+        derivative_axes=(
+            lib_config.get("derivative_axes", default_derivative_axes(bundle["axis_names"]))
+            if derivative_axes is None
+            else derivative_axes
+        ),
+        polynomial_degree=settings["polynomial_degree"],
+        derivative_order=settings["derivative_order"],
+        custom_tokens=custom_tokens,
+        coordinate_variables=lib_config.get("coordinate_variables", []),
+        include_bias=settings["include_bias"],
+        include_polynomials=include_polynomials,
+        include_derivatives=include_derivatives,
+        include_products=include_products,
+    )
+    return build_feature_matrix(feature_specs, crop_slices)
 
+
+def derivative_token_value(bundle, token_name):
+    if "_" not in token_name:
+        return bundle["variables"][token_name]["values"]
+
+    variable_name, suffix = token_name.split("_", 1)
+    if not suffix or len(set(suffix)) != 1:
+        raise ValueError(f"Cannot parse derivative token {token_name!r}")
+    return get_derivative(bundle, variable_name, suffix[0], len(suffix))
+
+
+def grid_values(values, shape, axis):
+    if len(shape) == 1:
+        return np.asarray(values, dtype=float)
+    return broadcast_axis(values, shape, axis=axis)
+
+
+def build_custom_tokens(token_names, bundle, data_shape, x, t):
+    if not token_names:
+        return []
+
+    specs = []
+    u = bundle["variables"].get("u", {}).get("values")
+    for token_name in token_names:
+        if token_name == "t":
+            specs.append(("t", grid_values(t, data_shape, axis=0)))
+        elif token_name == "t^2":
+            t_values = grid_values(t, data_shape, axis=0)
+            specs.append(("t^2", t_values ** 2))
+        elif token_name == "u_t sin(2 t)":
+            u_t = get_derivative(bundle, "u", "t", 1)
+            t_values = grid_values(t, data_shape, axis=0)
+            specs.append(("u_t sin(2 t)", u_t * np.sin(2 * t_values)))
+        elif token_name == "sin(t)":
+            specs.append(("sin(t)", np.sin(grid_values(t, data_shape, axis=0))))
+        elif token_name == "cos(t)":
+            specs.append(("cos(t)", np.cos(grid_values(t, data_shape, axis=0))))
+        elif token_name == "sin(2 t)":
+            specs.append(("sin(2 t)", np.sin(2 * grid_values(t, data_shape, axis=0))))
+        elif token_name == "cos(2 t)":
+            specs.append(("cos(2 t)", np.cos(2 * grid_values(t, data_shape, axis=0))))
+        elif token_name == "(1/x) u":
+            x_grid = grid_values(x, data_shape, axis=1)
+            specs.append(("(1/x) u", u / x_grid))
+        elif token_name == "(1/x) u_x":
+            x_grid = grid_values(x, data_shape, axis=1)
+            specs.append(("(1/x) u_x", get_derivative(bundle, "u", "x", 1) / x_grid))
+        elif token_name == "d_x(u u_x)":
+            u_x = get_derivative(bundle, "u", "x", 1)
+            specs.append(("d_x(u u_x)", numpy_gradient_derivative(u * u_x, x[1] - x[0], axis=1, order=1)))
+        elif token_name == "sin(x)":
+            specs.append(("sin(x)", np.sin(grid_values(x, data_shape, axis=1))))
+        elif token_name == "sin(x) cos(t)":
+            specs.append((
+                "sin(x) cos(t)",
+                np.sin(grid_values(x, data_shape, axis=1)) * np.cos(grid_values(t, data_shape, axis=0)),
+            ))
+        elif token_name == "cos(x) sin(t)":
+            specs.append((
+                "cos(x) sin(t)",
+                np.cos(grid_values(x, data_shape, axis=1)) * np.sin(grid_values(t, data_shape, axis=0)),
+            ))
+        else:
+            specs.append((token_name, derivative_token_value(bundle, token_name)))
+    return specs
+
+
+def default_variable_names(data_arrays):
+    if len(data_arrays) == 1:
+        return ["u"]
+    return [f"x{idx}" for idx in range(len(data_arrays))]
+
+
+def normalize_data_arrays(data):
     if isinstance(data, list):
-        data = np.array(data)
+        return [np.asarray(item, dtype=float) for item in data]
+    return [np.asarray(data, dtype=float)]
 
-    if filename == "ode_data.npy":
-        u = np.asarray(data, dtype=float).reshape(-1)
-        derivatives = compute_derivative_bundle(u, x=None, y=None, z=None, t=t, variable_names=["u"], max_orders=(2,))
-        u_t = get_derivative(derivatives, "u", "t", 1)
-        u_tt = get_derivative(derivatives, "u", "t", 2)
-        crop_slices = build_crop_slices(u.shape, crop)[0]
-        features, feature_names = build_generated_manual_features(
-            bundle=derivatives,
-            crop_slices=crop_slices,
-            polynomial_variables=["u"],
-            derivative_variables=["u"],
-            derivative_axes=["t"],
-            polynomial_degree=3,
-            derivative_order=1,
-            custom_tokens=[
-                ("t", t),
-                ("t^2", t ** 2),
-                ("u_t sin(2 t)", u_t * np.sin(2 * t)),
-            ],
-        )
-        return fit_manual_system(
-            features,
-            crop_and_flatten(u_tt, crop_slices),
-            feature_names,
-            "u_tt",
-            filename,
-            params["optimizer"],
-        )
 
-    if filename == "vdp_data.npy":
-        u = np.asarray(data, dtype=float).reshape(-1)
-        derivatives = compute_derivative_bundle(u, x=None, y=None, z=None, t=t, variable_names=["u"], max_orders=(2,))
-        u_tt = get_derivative(derivatives, "u", "t", 2)
-        crop_slices = build_crop_slices(u.shape, crop)[0]
-        features, feature_names = build_generated_manual_features(
-            bundle=derivatives,
-            crop_slices=crop_slices,
-            polynomial_variables=["u"],
-            derivative_variables=["u"],
-            derivative_axes=["t"],
-            polynomial_degree=3,
-            derivative_order=1,
-        )
-        return fit_manual_system(
-            features,
-            crop_and_flatten(u_tt, crop_slices),
-            feature_names,
-            "u_tt",
-            filename,
-            params["optimizer"],
-        )
+def max_orders(data_shape, params):
+    lib_config = params.get("library", {})
+    if "max_orders" in lib_config:
+        return tuple(lib_config["max_orders"][:len(data_shape)])
 
-    if filename == "ODE_simple_discovery":
-        u = np.asarray(data[0], dtype=float).reshape(-1)
-        derivatives = compute_derivative_bundle(u, x=None, y=None, z=None, t=t, variable_names=["u"], max_orders=(1,))
-        u_t = get_derivative(derivatives, "u", "t", 1)
-        features, feature_names = build_generated_manual_features(
-            bundle=derivatives,
-            crop_slices=slice(None),
-            polynomial_variables=["u"],
-            derivative_variables=[],
-            derivative_axes=["t"],
-            polynomial_degree=3,
-            derivative_order=0,
-            custom_tokens=[
-                ("sin(t)", np.sin(t)),
-                ("cos(t)", np.cos(t)),
-                ("sin(2 t)", np.sin(2 * t)),
-                ("cos(2 t)", np.cos(2 * t)),
-            ],
+    targets = params.get("targets", [])
+    axis_names = axis_names_for_shape(data_shape)
+    derivative_axes = lib_config.get("derivative_axes", default_derivative_axes(axis_names))
+    derivative_order = lib_config.get(
+        "derivative_order",
+        lib_config.get("ns_derivative_order", 0),
+    )
+    orders = []
+    for axis_name in axis_names:
+        target_order = max(
+            [target.get("order", 1) for target in targets if target.get("axis", "t") == axis_name] + [0]
         )
-        return fit_manual_system(features, u_t, feature_names, "u_t", filename, params["optimizer"])
+        configured_order = (
+            axis_order_limit(derivative_order, axis_name, default=0)
+            if axis_name in derivative_axes
+            else 0
+        )
+        if axis_name == "t" and not targets:
+            target_order = 1
+        orders.append(max(target_order, configured_order))
+    return tuple(orders)
 
-    if filename == "ns_data.mat":
-        u = np.asarray(data[0], dtype=float)
-        v = np.asarray(data[1], dtype=float)
-        p = np.asarray(data[2], dtype=float)
-        derivatives = compute_derivative_bundle(
-            [u, v, p],
-            x=x,
-            y=y,
-            z=z,
-            t=t,
-            variable_names=["u", "v", "p"],
-            max_orders=(1, 4, 4),
-        )
-        crop_slices = build_crop_slices(u.shape, crop)
-        u_t = get_derivative(derivatives, "u", "t", 1)
-        v_t = get_derivative(derivatives, "v", "t", 1)
-        u_x = get_derivative(derivatives, "u", "x", 1)
-        u_y = get_derivative(derivatives, "u", "y", 1)
-        v_x = get_derivative(derivatives, "v", "x", 1)
-        v_y = get_derivative(derivatives, "v", "y", 1)
-        u_xx = get_derivative(derivatives, "u", "x", 2)
-        u_yy = get_derivative(derivatives, "u", "y", 2)
-        v_xx = get_derivative(derivatives, "v", "x", 2)
-        v_yy = get_derivative(derivatives, "v", "y", 2)
-        p_x = get_derivative(derivatives, "p", "x", 1)
-        p_y = get_derivative(derivatives, "p", "y", 1)
-        p_xx = get_derivative(derivatives, "p", "x", 2)
-        p_yy = get_derivative(derivatives, "p", "y", 2)
-        u_features, u_feature_names = build_feature_matrix(
-            [
-                ("p_x", p_x),
-                ("p_xx", p_xx),
-                ("p_yy", p_yy),
-                ("u u_x", u * u_x),
-                ("v u_y", v * u_y),
-                ("(u_xx + u_yy)", u_xx + u_yy),
-                ("(v_xx + v_yy)", v_xx + v_yy),
-            ],
-            crop_slices,
-        )
-        v_features, v_feature_names = build_feature_matrix(
-            [
-                ("p_y", p_y),
-                ("p_xx", p_xx),
-                ("p_yy", p_yy),
-                ("u v_x", u * v_x),
-                ("v v_y", v * v_y),
-                ("(u_xx + u_yy)", u_xx + u_yy),
-                ("(v_xx + v_yy)", v_xx + v_yy),
-            ],
-            crop_slices,
-        )
 
-        u_result = fit_manual_system(
-            u_features,
-            crop_and_flatten(u_t, crop_slices),
-            u_feature_names,
-            "u_t",
-            filename,
-            params["optimizer"],
-        )
-        v_result = fit_manual_system(
-            v_features,
-            crop_and_flatten(v_t, crop_slices),
-            v_feature_names,
-            "v_t",
-            filename,
-            params["optimizer"],
-        )
-
-        continuity_features, continuity_names = build_feature_matrix(
-            [("v_y", v_y)],
-            crop_slices,
-        )
-        continuity_result = fit_manual_system(
-            continuity_features,
-            crop_and_flatten(u_x, crop_slices),
-            continuity_names,
-            "u_x",
-            filename,
-            params["optimizer"],
-        )
-
-        return {
-            "dataset": filename.split(".")[0],
-            "targets": ["u_t", "v_t", "u_x"],
-            "coefficients": [
-                u_result["coefficients"][0],
-                v_result["coefficients"][0],
-                continuity_result["coefficients"][0],
-            ],
-            "features": [
-                u_feature_names,
-                v_feature_names,
-                continuity_names,
-            ],
+def default_targets(variable_names):
+    return [
+        {
+            "name": f"{variable_name}_t",
+            "variable": variable_name,
+            "axis": "t",
+            "order": 1,
         }
+        for variable_name in variable_names
+    ]
 
-    u = np.asarray(data, dtype=float)
-    derivatives = compute_derivative_bundle(u, x=x, y=y, z=z, t=t, variable_names=["u"], max_orders=(2, 4))
-    crop_slices = build_crop_slices(u.shape, crop)
 
-    if filename in GENERATED_MANUAL_DATASETS:
-        u_t = get_derivative(derivatives, "u", "t", 1)
-        features, feature_names = build_generated_manual_features(
-            bundle=derivatives,
-            crop_slices=crop_slices,
-            polynomial_variables=["u"],
-            derivative_variables=["u"],
-            derivative_axes=["x"],
-            polynomial_degree=library_settings["polynomial_degree"],
-            derivative_order=library_settings["derivative_order"],
-            include_bias=library_settings["include_bias"],
-        )
-        return fit_manual_system(
-            features,
-            crop_and_flatten(u_t, crop_slices),
-            feature_names,
-            "u_t",
-            filename,
-            params["optimizer"],
+def build_target_features(target, params, bundle, crop_slices, data_shape, x, t):
+    lib_config = params.get("library", {})
+    if "feature_tokens" in target:
+        feature_specs = [
+            (token_name, derivative_token_value(bundle, token_name))
+            for token_name in target["feature_tokens"]
+        ]
+        return build_feature_matrix(feature_specs, crop_slices)
+
+    if lib_config.get("type") == "navier_stokes":
+        return build_ns_features(
+            bundle,
+            crop_slices,
+            params,
+            target_variable=target["variable"],
         )
 
-    if filename == "wave_data.csv":
-        u_tt = get_derivative(derivatives, "u", "t", 2)
-        u_t = get_derivative(derivatives, "u", "t", 1)
-        features, feature_names = build_generated_manual_features(
-            bundle=derivatives,
-            crop_slices=crop_slices,
-            polynomial_variables=["u"],
-            derivative_variables=["u"],
-            derivative_axes=["x"],
-            polynomial_degree=3,
-            derivative_order=4,
-            custom_tokens=[("u_t", u_t)],
-        )
-        return fit_manual_system(
-            features,
-            crop_and_flatten(u_tt, crop_slices),
-            feature_names,
-            "u_tt",
-            filename,
-            params["optimizer"],
-        )
-
-    if filename == "pde_divide_data.npy":
-        u_t = get_derivative(derivatives, "u", "t", 1)
-        u_x = get_derivative(derivatives, "u", "x", 1)
-        u_xx = get_derivative(derivatives, "u", "x", 2)
-        x_grid = broadcast_axis(x, u.shape, axis=1)
-        features, feature_names = build_generated_manual_features(
-            bundle=derivatives,
-            crop_slices=crop_slices,
-            polynomial_variables=["u"],
-            derivative_variables=["u"],
-            derivative_axes=["x"],
-            polynomial_degree=3,
-            derivative_order=4,
-            custom_tokens=[
-                ("(1/x) u", u / x_grid),
-                ("(1/x) u_x", u_x / x_grid),
-                ("x u_x", x_grid * u_x),
-                ("x u_xx", x_grid * u_xx),
-            ],
-        )
-        return fit_manual_system(
-            features,
-            crop_and_flatten(u_t, crop_slices),
-            feature_names,
-            "u_t",
-            filename,
-            params["optimizer"],
-        )
-
-    if filename == "pde_compound_data.npy":
-        u_t = get_derivative(derivatives, "u", "t", 1)
-        u_x = get_derivative(derivatives, "u", "x", 1)
-        nonlinear_derivative = numpy_gradient_derivative(u * u_x, x[1] - x[0], axis=1, order=1)
-        features, feature_names = build_generated_manual_features(
-            bundle=derivatives,
-            crop_slices=crop_slices,
-            polynomial_variables=["u"],
-            derivative_variables=["u"],
-            derivative_axes=["x"],
-            polynomial_degree=3,
-            derivative_order=4,
-            custom_tokens=[("d_x(u u_x)", nonlinear_derivative)],
-        )
-        return fit_manual_system(
-            features,
-            crop_and_flatten(u_t, crop_slices),
-            feature_names,
-            "u_t",
-            filename,
-            params["optimizer"],
-        )
-
-    if filename == "kdv_periodic_data.npy":
-        u_t = get_derivative(derivatives, "u", "t", 1)
-        x_grid = broadcast_axis(x, u.shape, axis=1)
-        t_grid = broadcast_axis(t, u.shape, axis=0)
-        features, feature_names = build_generated_manual_features(
-            bundle=derivatives,
-            crop_slices=crop_slices,
-            polynomial_variables=["u"],
-            derivative_variables=["u"],
-            derivative_axes=["x"],
-            polynomial_degree=3,
-            derivative_order=4,
-            custom_tokens=[
-                ("sin(x)", np.sin(x_grid)),
-                ("cos(t)", np.cos(t_grid)),
-                ("sin(x) cos(t)", np.sin(x_grid) * np.cos(t_grid)),
-                ("cos(x) sin(t)", np.cos(x_grid) * np.sin(t_grid)),
-            ],
-        )
-        return fit_manual_system(
-            features,
-            crop_and_flatten(u_t, crop_slices),
-            feature_names,
-            "u_t",
-            filename,
-            params["optimizer"],
-        )
-
-    raise ValueError(f"Unknown manual mode for dataset: {filename}")
+    custom_tokens = build_custom_tokens(
+        lib_config.get("custom_tokens", []),
+        bundle,
+        data_shape,
+        x,
+        t,
+    )
+    return build_configured_features(
+        params=params,
+        bundle=bundle,
+        crop_slices=crop_slices,
+        custom_tokens=custom_tokens,
+    )
 
 
 def run_sindy(data, x, y, z, t, filename):
     params = sindy_params[filename]
+    
+    data_arrays = normalize_data_arrays(data)
+    lib_config = params.get("library", {})
+    variable_names = lib_config.get("variable_names", default_variable_names(data_arrays))
+    targets = params.get("targets", default_targets(variable_names))
+    derivatives = compute_derivative_bundle(
+        data_arrays if len(data_arrays) > 1 else data_arrays[0],
+        x=x,
+        y=y,
+        z=z,
+        t=t,
+        variable_names=variable_names,
+        max_orders=max_orders(data_arrays[0].shape, params),
+    )
+    crop_slices = build_crop_slices(data_arrays[0].shape, params.get("crop", 0))
 
-    if params.get("manual_mode") or filename in GENERATED_MANUAL_DATASETS:
-        return run_manual_dataset(data, x, y, z, t, filename, params)
-
-    data = prepare_standard_data(data, x, t, filename)
-    x_dot = None
-    if filename in ["lotka_data.npy", "lorenz_data.npy"]:
-        x_dot = numpy_gradient_derivative(data, t[1] - t[0], axis=0, order=1)
-
-    if params.get("preprocess", {}).get("moveaxis", False):
-        data = np.moveaxis(data, 0, -1)
-        if x_dot is not None:
-            x_dot = np.moveaxis(x_dot, 0, -1)
-
-    library = build_library(params["library"], x)
-    optimizer = build_optimizer(params["optimizer"])
-
-    model = ps.SINDy(optimizer=optimizer, feature_library=library)
-    if x_dot is None:
-        model.fit(data, t=t[1] - t[0])
-    else:
-        model.fit(data, t=t[1] - t[0], x_dot=x_dot)
-    model.print(precision=4)
+    results = []
+    feature_names_by_target = []
+    for target in targets:
+        target_variable = target["variable"]
+        target_axis = target.get("axis", "t")
+        target_order = target.get("order", 1)
+        target_name = target.get("name", derivative_name(
+            target_variable,
+            tuple(target_order if axis_name == target_axis else 0 for axis_name in derivatives["axis_names"]),
+            derivatives["axis_names"],
+        ))
+        features, feature_names = build_target_features(
+            target,
+            params,
+            derivatives,
+            crop_slices,
+            data_arrays[0].shape,
+            x,
+            t,
+        )
+        result = fit_sparse_system(
+            features,
+            crop_and_flatten(get_derivative(derivatives, target_variable, target_axis, target_order), crop_slices),
+            feature_names,
+            target_name,
+            filename,
+            params["optimizer"],
+        )
+        results.append(result)
+        feature_names_by_target.append(feature_names)
 
     return {
         "dataset": filename.split(".")[0],
-        "coefficients": model.coefficients().tolist(),
-        "features": model.get_feature_names(),
+        "targets": [result["target"] for result in results],
+        "coefficients": [result["coefficients"][0] for result in results],
+        "features": feature_names_by_target,
     }
 
 
