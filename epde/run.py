@@ -39,7 +39,8 @@ DATASETS = [
 
 
 def save_combined_results(results):
-    """Save results to a common JSON file"""
+    """Save all dataset results into one JSON file."""
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_file = RESULTS_DIR / f"results_{timestamp}.json"
     output_file.parent.mkdir(exist_ok=True)
@@ -53,6 +54,8 @@ def save_combined_results(results):
 
 
 def get_coordinate_tensors(coordinate_tensors, t, x, y, z):
+    """Build coordinate tensors in the format expected by EPDE."""
+
     if coordinate_tensors == None:
         # 2d
         return np.meshgrid(t, x, indexing = 'ij')
@@ -65,6 +68,8 @@ def get_coordinate_tensors(coordinate_tensors, t, x, y, z):
 
 
 def get_additional_tokens(additional_tokens, grid, data, trig_tokens_freq):
+    """Create optional EPDE token families configured for a dataset."""
+
     if additional_tokens == None:
         return []
 
@@ -136,7 +141,8 @@ def get_additional_tokens(additional_tokens, grid, data, trig_tokens_freq):
 
 
 def run_epde(data, x, y, z, t, filename):
-    """Основная логика идентификации"""
+    """Run EPDE discovery for one configured dataset."""
+
     start = time.perf_counter()
 
     params = epde_params[filename]

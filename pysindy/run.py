@@ -40,6 +40,8 @@ DATASETS = [
 
 
 def save_combined_results(results):
+    """Save all dataset results into one timestamped JSON file."""
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_file = RESULTS_DIR / f"results_{timestamp}.json"
     output_file.parent.mkdir(exist_ok=True)
@@ -49,6 +51,8 @@ def save_combined_results(results):
 
 
 def build_optimizer(opt_config):
+    """Create the sparse optimizer described by the dataset config."""
+
     opt_type = opt_config.get("type", "STLSQ")
 
     if opt_type == "STLSQ":
@@ -72,17 +76,22 @@ def build_optimizer(opt_config):
 
 
 def build_crop_slices(shape, crop):
+    """Return slices that trim boundary points from each data axis."""
+
     if crop <= 0:
         return tuple(slice(None) for _ in shape)
     return tuple(slice(crop, dim - crop) for dim in shape)
 
 
 def crop_and_flatten(values, crop_slices):
+    """Apply configured boundary crop and flatten values."""
+
     values = np.asarray(values, dtype=float)
     return values[crop_slices].ravel()
 
 
 def build_feature_matrix(feature_specs, crop_slices):
+    """Convert named feature tensors into a cropped 2D design matrix."""
     feature_names = [name for name, _ in feature_specs]
     features = np.column_stack([
         crop_and_flatten(values, crop_slices) for _, values in feature_specs
@@ -109,6 +118,8 @@ def monomial_name(variable_names, exponents):
 
 
 def generate_polynomial_tokens(fields, variable_names, degree=3, include_bias=True):
+    """Generate polynomial feature tensors up to total degree."""
+
     specs = []
     for exponents in product(range(degree + 1), repeat=len(variable_names)):
         total_degree = sum(exponents)
@@ -131,6 +142,8 @@ def generate_polynomial_tokens(fields, variable_names, degree=3, include_bias=Tr
 
 
 def generate_derivative_tokens(bundle, variable_names, axis_names, max_order=4):
+    """Generate derivative feature tensors for selected variables and axes."""
+
     specs = []
     for variable_name in variable_names:
         for axis_name in axis_names:
@@ -179,6 +192,8 @@ def axis_order_limit(derivative_order, axis_name, default=0):
 
 
 def feature_field(bundle, field_name):
+    """Return either a data variable or a broadcast coordinate grid."""
+
     if field_name in bundle["variables"]:
         return bundle["variables"][field_name]["values"]
 
@@ -204,6 +219,8 @@ def generate_feature_library(
     include_derivatives=True,
     include_products=True,
 ):
+    """Build the configured token list before cropping into a matrix."""
+
     fields = {
         variable_name: feature_field(bundle, variable_name)
         for variable_name in polynomial_variables
@@ -277,6 +294,8 @@ def second_derivative_sum_feature(bundle, variable_name, axes):
 
 
 def build_ns_features(bundle, crop_slices, params, target_variable):
+    """Build the Navier-Stokes token library for one target equation."""
+
     lib_config = params.get("library", {})
     velocity_variables = lib_config.get("ns_velocity_variables", ["u", "v"])
     pressure_variable = lib_config.get("ns_pressure_variable", "p")
@@ -345,7 +364,9 @@ def build_ns_features(bundle, crop_slices, params, target_variable):
     return build_feature_matrix(deduplicate_feature_specs(feature_specs), crop_slices)
 
 
-def print_sparse_equation(target_name, feature_names, coefficients, precision=4):
+def print_equation(target_name, feature_names, coefficients, precision=4):
+    """Print an equation using fitted coefficients."""
+
     active_terms = []
     for coef, feature in zip(np.ravel(coefficients), feature_names):
         if abs(coef) > 1e-12:
@@ -357,7 +378,18 @@ def print_sparse_equation(target_name, feature_names, coefficients, precision=4)
     print(f"{target_name} = {rhs}")
 
 
+def print_feature_library(target_name, feature_names):
+    """Print the feature names used for one target equation."""
+
+    print(f"{target_name} library ({len(feature_names)} terms):")
+    print("  " + ", ".join(feature_names))
+
+
 def fit_sparse_system(feature_matrix, target_vector, feature_names, target_name, filename, opt_config):
+    """Fit one sparse regression problem and return results."""
+
+    # print_feature_library(target_name, feature_names)
+
     optimizer = build_optimizer(opt_config)
     optimizer.fit(feature_matrix, target_vector)
 
@@ -368,7 +400,7 @@ def fit_sparse_system(feature_matrix, target_vector, feature_names, target_name,
     if coefficients.ndim == 1:
         coefficients = coefficients[np.newaxis, :]
 
-    print_sparse_equation(target_name, feature_names, coefficients[0])
+    print_equation(target_name, feature_names, coefficients[0])
 
     return {
         "dataset": filename.split(".")[0],
@@ -379,6 +411,8 @@ def fit_sparse_system(feature_matrix, target_vector, feature_names, target_name,
 
 
 def library_settings(params, default_polynomial_degree=3, default_derivative_order=4):
+    """Normalize library degree, derivative order, and bias settings."""
+
     lib_config = params.get("library", {})
     return {
         "polynomial_degree": lib_config.get(
@@ -407,6 +441,8 @@ def build_configured_features(
     default_polynomial_degree=3,
     default_derivative_order=4,
 ):
+    """Build the generic configured feature matrix."""
+
     lib_config = params.get("library", {})
     settings = library_settings(
         params,
@@ -459,6 +495,8 @@ def grid_values(values, shape, axis):
 
 
 def build_custom_tokens(token_names, bundle, data_shape, x, t):
+    """Add dataset-specific tokens."""
+
     if not token_names:
         return []
 
@@ -521,6 +559,8 @@ def normalize_data_arrays(data):
 
 
 def max_orders(data_shape, params):
+    """Choose derivative orders to precompute for targets and features."""
+
     lib_config = params.get("library", {})
     if "max_orders" in lib_config:
         return tuple(lib_config["max_orders"][:len(data_shape)])
@@ -561,6 +601,8 @@ def default_targets(variable_names):
 
 
 def build_target_features(target, params, bundle, crop_slices, data_shape, x, t):
+    """Build the feature matrix for one configured target equation."""
+
     lib_config = params.get("library", {})
     if "feature_tokens" in target:
         feature_specs = [
@@ -593,6 +635,8 @@ def build_target_features(target, params, bundle, crop_slices, data_shape, x, t)
 
 
 def run_sindy(data, x, y, z, t, filename):
+    """Run PySINDy sparse discovery for one configured dataset."""
+
     params = sindy_params[filename]
     
     data_arrays = normalize_data_arrays(data)
