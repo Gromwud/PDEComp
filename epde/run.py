@@ -10,7 +10,7 @@ import time
 from datetime import datetime
 
 from data.dataloader import load_data
-from data.config import epde_params
+from data.config import epde_params, COMMON_PARAMS
 from data.derivatives import build_epde_derivatives
 
 DATA_DIR = Path("data")
@@ -140,6 +140,24 @@ def get_additional_tokens(additional_tokens, grid, data, trig_tokens_freq):
         return [custom_trig_tokens]
 
 
+def normalize_epde_max_deriv_order(max_deriv_order, data):
+    """Interpret (time, spatial) derivative limits for any dataset dimensionality."""
+
+    ndim = np.asarray(data).ndim
+    if isinstance(max_deriv_order, int):
+        return tuple([max_deriv_order] * ndim)
+
+    orders = tuple(max_deriv_order)
+    if len(orders) == ndim:
+        return orders
+    if len(orders) > ndim:
+        return orders[:ndim]
+    if len(orders) == 2 and ndim > 2:
+        return (orders[0],) + tuple([orders[1]] * (ndim - 1))
+
+    raise ValueError(f"Expected derivative order for {ndim} axes, got {max_deriv_order}")
+
+
 def run_epde(data, x, y, z, t, filename):
     """Run EPDE discovery for one configured dataset."""
 
@@ -156,10 +174,10 @@ def run_epde(data, x, y, z, t, filename):
     population_size = params["population_size"]
     training_epochs = params["training_epochs"]
 
-    max_deriv_order = params["max_deriv_order"]
+    max_deriv_order = normalize_epde_max_deriv_order(params.get("max_deriv_order", COMMON_PARAMS["max_deriv_order"]), epde_data[0])
     derivs = params.get("derivs", None)
     equation_terms_max_number = params["equation_terms_max_number"]
-    data_fun_pow = params["data_fun_pow"]
+    data_fun_pow = params.get("data_fun_pow", COMMON_PARAMS["data_fun_pow"])
     additional_tokens = params.get("additional_tokens", None)
     equation_factors_max_number = params["equation_factors_max_number"]
     eq_sparsity_interval = params["eq_sparsity_interval"]

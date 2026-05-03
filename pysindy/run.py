@@ -9,7 +9,7 @@ import pysindy as ps
 
 sys.path.append(str(Path().absolute()))
 
-from data.config import sindy_params
+from data.config import sindy_params, COMMON_PARAMS
 from data.dataloader import load_data
 from data.derivatives import (
     compute_derivative_bundle,
@@ -300,8 +300,8 @@ def build_ns_features(bundle, crop_slices, params, target_variable):
     velocity_variables = lib_config.get("ns_velocity_variables", ["u", "v"])
     pressure_variable = lib_config.get("ns_pressure_variable", "p")
     axes = lib_config.get("ns_derivative_axes", ["x", "y"])
-    polynomial_degree = lib_config["data_fun_pow"]
-    max_deriv_order = lib_config["max_deriv_order"]
+    polynomial_degree = lib_config.get("data_fun_pow", COMMON_PARAMS["data_fun_pow"])
+    max_deriv_order = lib_config.get("max_deriv_order", COMMON_PARAMS["max_deriv_order"])
 
     velocity_fields = {
         variable_name: bundle["variables"][variable_name]["values"]
@@ -419,7 +419,7 @@ def max_factors_in_term(lib_config):
 def effective_polynomial_degree(lib_config):
     """Map factor power and factor count to PySINDy polynomial degree."""
 
-    data_fun_pow = lib_config["data_fun_pow"]
+    data_fun_pow = lib_config.get("data_fun_pow", COMMON_PARAMS["data_fun_pow"])
     if (
         lib_config.get("type") == "polynomial"
         and not lib_config.get("derivative_axes")
@@ -435,7 +435,7 @@ def library_settings(params):
     lib_config = params.get("library", {})
     return {
         "polynomial_degree": effective_polynomial_degree(lib_config),
-        "max_deriv_order": lib_config["max_deriv_order"],
+        "max_deriv_order": lib_config.get("max_deriv_order", COMMON_PARAMS["max_deriv_order"]),
         "max_factors_in_term": max_factors_in_term(lib_config),
         "include_bias": lib_config.get(
             "include_bias",
@@ -478,7 +478,7 @@ def build_configured_features(
             else derivative_axes
         ),
         polynomial_degree=settings["polynomial_degree"],
-        max_deriv_order=settings["max_deriv_order"],
+        max_deriv_order=settings.get("max_deriv_order", COMMON_PARAMS["max_deriv_order"]),
         custom_tokens=custom_tokens,
         coordinate_variables=lib_config.get("coordinate_variables", []),
         max_factors_in_term=settings["max_factors_in_term"],
@@ -574,7 +574,7 @@ def configured_max_deriv_order(data_shape, params):
     """Choose derivative orders to precompute for targets and features."""
 
     lib_config = params.get("library", {})
-    return tuple(lib_config["max_deriv_order"][:len(data_shape)])
+    return tuple(lib_config.get("max_deriv_order", COMMON_PARAMS["max_deriv_order"])[:len(data_shape)])
 
 
 def default_targets(variable_names):
