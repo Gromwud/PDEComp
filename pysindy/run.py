@@ -213,6 +213,7 @@ def generate_feature_library(
     max_deriv_order=None,
     custom_tokens=None,
     coordinate_variables=None,
+    max_factors_in_term=2,
     include_bias=True,
     include_polynomials=True,
     include_derivatives=True,
@@ -246,7 +247,7 @@ def generate_feature_library(
         feature_specs.extend(polynomial_specs)
     if include_derivatives:
         feature_specs.extend(derivative_specs)
-    if include_products:
+    if include_products and max_factors_in_term >= 2:
         for polynomial_name, polynomial_values in polynomial_specs:
             if polynomial_name == "1":
                 continue
@@ -409,31 +410,33 @@ def fit_sparse_system(feature_matrix, target_vector, feature_names, target_name,
     }
 
 
-def max_factor_count(lib_config):
-    """Return the largest EPDE-style number of factors in one term."""
+def max_factors_in_term(lib_config):
+    """Return the configured maximum number of factors in one term."""
 
-    factors = lib_config.get("equation_factors_max_number", 1)
-    if isinstance(factors, dict):
-        return max(factors.get("factors_num", [1]))
-    return int(factors)
+    return int(lib_config["equation_factors_max_number"])
+
+
+def effective_polynomial_degree(lib_config):
+    """Map factor power and factor count to PySINDy polynomial degree."""
+
+    data_fun_pow = lib_config["data_fun_pow"]
+    if (
+        lib_config.get("type") == "polynomial"
+        and not lib_config.get("derivative_axes")
+        and len(lib_config.get("variable_names", [])) > 1
+    ):
+        return data_fun_pow * max_factors_in_term(lib_config)
+    return data_fun_pow
 
 
 def library_settings(params):
     """Normalize library degree, derivative order, and bias settings."""
 
     lib_config = params.get("library", {})
-    data_fun_pow = lib_config["data_fun_pow"]
-    polynomial_degree = data_fun_pow
-    if (
-        lib_config.get("type") == "polynomial"
-        and not lib_config.get("derivative_axes")
-        and len(lib_config.get("variable_names", [])) > 1
-    ):
-        polynomial_degree = data_fun_pow * max_factor_count(lib_config)
-
     return {
-        "polynomial_degree": polynomial_degree,
+        "polynomial_degree": effective_polynomial_degree(lib_config),
         "max_deriv_order": lib_config["max_deriv_order"],
+        "max_factors_in_term": max_factors_in_term(lib_config),
         "include_bias": lib_config.get(
             "include_bias",
             lib_config.get("poly_include_bias", lib_config.get("pde_include_bias", True)),
@@ -478,6 +481,7 @@ def build_configured_features(
         max_deriv_order=settings["max_deriv_order"],
         custom_tokens=custom_tokens,
         coordinate_variables=lib_config.get("coordinate_variables", []),
+        max_factors_in_term=settings["max_factors_in_term"],
         include_bias=settings["include_bias"],
         include_polynomials=include_polynomials,
         include_derivatives=include_derivatives,
