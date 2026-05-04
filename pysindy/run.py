@@ -328,7 +328,7 @@ def build_ns_features(bundle, crop_slices, params, target_variable):
         velocity_variables,
         degree=polynomial_degree,
         max_factors=1,
-        include_bias=False,
+        include_bias=True,
     )
 
     derivative_specs = generate_derivative_tokens(
@@ -404,7 +404,7 @@ def print_feature_library(target_name, feature_names):
 def fit_sparse_system(feature_matrix, target_vector, feature_names, target_name, filename, opt_config):
     """Fit one sparse regression problem and return results."""
 
-    # print_feature_library(target_name, feature_names)
+    print_feature_library(target_name, feature_names)
 
     optimizer = build_optimizer(opt_config)
     optimizer.fit(feature_matrix, target_vector)
@@ -445,7 +445,7 @@ def library_settings(params):
         "max_factors_in_term": max_factors_in_term(lib_config),
         "include_bias": lib_config.get(
             "include_bias",
-            lib_config.get("poly_include_bias", lib_config.get("pde_include_bias", True)),
+            COMMON_PARAMS["include_bias"],
         ),
     }
 
@@ -523,6 +523,8 @@ def build_custom_tokens(token_names, bundle, data_shape, x, t):
     for token_name in token_names:
         if token_name == "t":
             specs.append(("t", grid_values(t, data_shape, axis=0)))
+        elif token_name == "x":
+            specs.append(("x", grid_values(x, data_shape, axis=1)))
         elif token_name == "t^2":
             t_values = grid_values(t, data_shape, axis=0)
             specs.append(("t^2", t_values ** 2))
