@@ -249,46 +249,46 @@ COMMON_PARAMS = {
 
 sindy_params = {
     'ac_data.npy': {
-        'library': {'type': 'pde', 'poly_include_bias': False, 'pde_include_bias': True},
+        'library': {'type': 'pde', 'poly_include_bias': False, 'derivative_axes': ['x', 't'], 'pde_include_bias': True},
         'optimizer': {'type': 'STLSQ', 'threshold': 1, 'alpha': 1e-5, 'normalize_columns': True, 'coefficient_tol': 1e-3}
     },
     
     'kdv_data.mat': {
-        'library': {'type': 'pde', 'poly_include_bias': False, 'pde_include_bias': True},
+        'library': {'type': 'pde', 'poly_include_bias': False, 'derivative_axes': ['x', 't'], 'pde_include_bias': True},
         'optimizer': {'type': 'STLSQ', 'threshold': 5, 'alpha': 1e-5, 'normalize_columns': True}
     },
 
     'kdv_periodic_data.npy': {
         'crop': 10,
-        'library': {'type': 'pde', 'poly_include_bias': False, 'pde_include_bias': True, 'custom_tokens': ['sin(x)', 'cos(t)', 'sin(x) cos(t)', 'cos(x) sin(t)']},
+        'library': {'type': 'pde', 'poly_include_bias': False, 'derivative_axes': ['x', 't'], 'pde_include_bias': True, 'custom_tokens': ['sin(x)', 'cos(t)', 'sin(x) cos(t)', 'cos(x) sin(t)']},
         'optimizer': {'type': 'STLSQ', 'threshold': 0.05, 'alpha': 1e-10, 'normalize_columns': True, 'coefficient_tol': 1e-3}
     },
 
     'burgers_data.mat': {
-        'library': {'type': 'pde', 'poly_include_bias': False, 'pde_include_bias': True},
-        'optimizer': {'type': 'STLSQ', 'threshold': 2, 'alpha': 1e-5, 'normalize_columns': True}
+        'library': {'type': 'pde', 'poly_include_bias': False, 'derivative_axes': ['x', 't'], 'pde_include_bias': True},
+        'optimizer': {'type': 'STLSQ', 'threshold': 4.5, 'alpha': 1e-3, 'normalize_columns': True}
     },
     
     'burgers_sln_100_data.csv': {
-        'library': {'type': 'pde', 'poly_include_bias': False, 'pde_include_bias': True},
+        'library': {'type': 'pde', 'poly_include_bias': False, 'derivative_axes': ['x', 't'], 'pde_include_bias': True},
         'optimizer': {'type': 'STLSQ', 'threshold': 0.5, 'alpha': 1e-5, 'normalize_columns': False, 'coefficient_tol': 0.1}
     },
 
     'pde_divide_data.npy': {
         'crop': 10,
-        'library': {'type': 'pde_custom_concat', 'poly_include_bias': False, 'pde_include_bias': True, 'coordinate_variables': ['x'], 'custom_tokens': ['(1/x) u', '(1/x) u_x']},
+        'library': {'type': 'pde_custom_concat', 'poly_include_bias': False, 'derivative_axes': ['x', 't'], 'pde_include_bias': True, 'coordinate_variables': ['x'], 'custom_tokens': ['(1/x) u', '(1/x) u_x']},
         'optimizer': {'type': 'STLSQ', 'threshold': 0.01, 'alpha': 1e-10, 'normalize_columns': False}
     },
 
     'pde_compound_data.npy': {
         'crop': 10,
-        'library': {'type': 'pde_custom_concat', 'poly_include_bias': False, 'pde_include_bias': True, 'custom_tokens': ['d_x(u u_x)']},
+        'library': {'type': 'pde_custom_concat', 'poly_include_bias': False, 'derivative_axes': ['x', 't'], 'pde_include_bias': True, 'custom_tokens': ['d_x(u u_x)']},
         'optimizer': {'type': 'STLSQ', 'threshold': 0.02, 'alpha': 1e-10, 'normalize_columns': False, 'coefficient_tol': 1e-3}
     },
 
     'ks_data.mat': {
         'crop': 5,
-        'library': {'type': 'pde', 'poly_include_bias': False, 'pde_include_bias': True, 'diff_kwargs': {'periodic': True}},
+        'library': {'type': 'pde', 'poly_include_bias': False, 'derivative_axes': ['x', 't'], 'pde_include_bias': True, 'diff_kwargs': {'periodic': True}},
         'optimizer': {'type': 'STLSQ', 'threshold': 0.1, 'alpha': 1e-8, 'normalize_columns': True, 'coefficient_tol': 0.03}
     },
 
@@ -341,8 +341,7 @@ sindy_params = {
 
     'ODE_simple_discovery': {
         'targets': [{'name': 'u_t', 'variable': 'u', 'axis': 't', 'order': 1}],
-        'library': {'type': 'poly_and_fourier', 'poly_include_bias': True, 'n_frequencies': 1, 'custom_tokens': ['sin(t)', 'cos(t)']},
-        'optimizer': {'type': 'STLSQ', 'threshold': 0.1, 'alpha': 1e-12, 'normalize_columns': True}
+        'library': {'type': 'poly_and_fourier', 'poly_include_bias': True, 'derivative_axes': ['t'], 'n_frequencies': 1, 'custom_tokens': ['sin(t)', 'cos(t)']},
+        'optimizer': {'type': 'STLSQ', 'threshold': 1, 'alpha': 1e-5, 'normalize_columns': True}
     }
 }
-
