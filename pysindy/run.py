@@ -117,18 +117,24 @@ def monomial_name(variable_names, exponents):
     return " ".join(parts) if parts else "1"
 
 
-def generate_polynomial_tokens(fields, variable_names, degree=3, include_bias=True):
-    """Generate polynomial feature tensors up to total degree."""
+def generate_polynomial_tokens(
+    fields,
+    variable_names,
+    degree=3,
+    max_factors=2,
+    include_bias=True,
+):
+    """Generate polynomial tensors with bounded factor powers and count."""
 
     specs = []
     for exponents in product(range(degree + 1), repeat=len(variable_names)):
-        total_degree = sum(exponents)
-        if total_degree == 0:
+        factor_count = sum(exponent > 0 for exponent in exponents)
+        if factor_count == 0:
             if include_bias:
                 reference = fields[variable_names[0]]
                 specs.append(("1", np.ones_like(reference, dtype=float)))
             continue
-        if total_degree > degree:
+        if max_factors is not None and factor_count > max_factors:
             continue
 
         value = np.ones_like(fields[variable_names[0]], dtype=float)
@@ -139,6 +145,12 @@ def generate_polynomial_tokens(fields, variable_names, degree=3, include_bias=Tr
 
     specs.sort(key=lambda spec: (spec[0].count(" "), spec[0]))
     return specs
+
+
+def token_factor_count(token_name):
+    """Count space-separated factors in a generated token name."""
+
+    return len(token_name.split())
 
 
 def generate_derivative_tokens(bundle, variable_names, axis_names, max_deriv_order):
@@ -229,6 +241,7 @@ def generate_feature_library(
         fields,
         polynomial_variables,
         degree=polynomial_degree,
+        max_factors=max_factors_in_term,
         include_bias=include_bias,
     )
     derivative_specs = generate_derivative_tokens(
@@ -250,6 +263,8 @@ def generate_feature_library(
     if include_products and max_factors_in_term >= 2:
         for polynomial_name, polynomial_values in polynomial_specs:
             if polynomial_name == "1":
+                continue
+            if token_factor_count(polynomial_name) + 1 > max_factors_in_term:
                 continue
             for derivative_name_, derivative_values in derivative_specs:
                 feature_specs.append((
@@ -312,6 +327,7 @@ def build_ns_features(bundle, crop_slices, params, target_variable):
         velocity_fields,
         velocity_variables,
         degree=polynomial_degree,
+        max_factors=1,
         include_bias=False,
     )
 
@@ -413,20 +429,10 @@ def fit_sparse_system(feature_matrix, target_vector, feature_names, target_name,
 def max_factors_in_term(lib_config):
     """Return the configured maximum number of factors in one term."""
 
-    return int(lib_config["equation_factors_max_number"])
-
-
-def effective_polynomial_degree(lib_config):
-    """Map factor power and factor count to PySINDy polynomial degree."""
-
-    data_fun_pow = lib_config.get("data_fun_pow", COMMON_PARAMS["data_fun_pow"])
-    if (
-        lib_config.get("type") == "polynomial"
-        and not lib_config.get("derivative_axes")
-        and len(lib_config.get("variable_names", [])) > 1
-    ):
-        return data_fun_pow * max_factors_in_term(lib_config)
-    return data_fun_pow
+    return int(lib_config.get(
+        "equation_factors_max_number",
+        COMMON_PARAMS["equation_factors_max_number"],
+    ))
 
 
 def library_settings(params):
@@ -434,7 +440,7 @@ def library_settings(params):
 
     lib_config = params.get("library", {})
     return {
-        "polynomial_degree": effective_polynomial_degree(lib_config),
+        "polynomial_degree": lib_config.get("data_fun_pow", COMMON_PARAMS["data_fun_pow"]),
         "max_deriv_order": lib_config.get("max_deriv_order", COMMON_PARAMS["max_deriv_order"]),
         "max_factors_in_term": max_factors_in_term(lib_config),
         "include_bias": lib_config.get(
