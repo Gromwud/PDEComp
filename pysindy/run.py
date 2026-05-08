@@ -72,6 +72,13 @@ def build_optimizer(opt_config):
             nu=opt_config.get("nu", 1.0),
         )
 
+    if opt_type == "FROLS":
+        return ps.FROLS(
+            max_iter=opt_config.get("max_iter", 10),
+            alpha=opt_config.get("alpha", 0.05),
+            normalize_columns=opt_config.get("normalize_columns", False),
+        )
+
     raise ValueError(f"Unknown optimizer type: {opt_type}")
 
 
@@ -399,6 +406,7 @@ def print_feature_library(target_name, feature_names):
 
     print(f"{target_name} library ({len(feature_names)} terms):")
     print("  " + ", ".join(feature_names))
+    print()
 
 
 def fit_sparse_system(feature_matrix, target_vector, feature_names, target_name, filename, opt_config):
@@ -417,6 +425,7 @@ def fit_sparse_system(feature_matrix, target_vector, feature_names, target_name,
         coefficients = coefficients[np.newaxis, :]
 
     print_equation(target_name, feature_names, coefficients[0])
+    print()
 
     return {
         "dataset": filename.split(".")[0],
