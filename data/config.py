@@ -271,8 +271,8 @@ sindy_params = {
     },
     
     'burgers_sln_100_data.csv': {
-        'library': {'type': 'pde', 'derivative_axes': ['x', 't'], 'custom_tokens': ['t', 'x']},
-        'optimizer': {'type': 'STLSQ', 'threshold': 0.5, 'alpha': 1e-5, 'normalize_columns': False, 'coefficient_tol': 0.1}
+        'library': {'type': 'pde', 'derivative_axes': ['x', 't'], 'max_deriv_order': (2, 1), 'custom_tokens': ['t', 'x']},
+        'optimizer': {'type': 'FROLS', 'max_iter': 3, 'alpha': 1e-5, 'normalize_columns': True, 'coefficient_tol': 0.01}
     },
 
     'pde_divide_data.npy': {
@@ -290,7 +290,7 @@ sindy_params = {
     'ks_data.mat': {
         'crop': 5,
         'library': {'type': 'pde', 'derivative_axes': ['x', 't'], 'diff_kwargs': {'periodic': True}, 'custom_tokens': ['t', 'x']},
-        'optimizer': {'type': 'STLSQ', 'threshold': 1, 'alpha': 1e-3, 'normalize_columns': True, 'coefficient_tol': 0.03}
+        'optimizer': {'type': 'FROLS', 'max_iter': 3, 'alpha': 1e-5, 'normalize_columns': True, 'coefficient_tol': 0.01}
     },
 
     'wave_data.csv': {
@@ -302,7 +302,7 @@ sindy_params = {
 
     'lorenz_data.npy': {
         'library': {'type': 'polynomial', 'data_fun_pow': 2, 'variable_names': ['x0', 'x1', 'x2'], 'polynomial_variables': ['x0', 'x1', 'x2'], 'custom_tokens': ['t']},
-        'optimizer': {'type': 'STLSQ', 'threshold': 0.5, 'alpha': 0.05, 'normalize_columns': False}
+        'optimizer': {'type': 'STLSQ', 'threshold': 0.5, 'alpha': 0.5, 'normalize_columns': False}
     },
 
     'lotka_data.npy': {
