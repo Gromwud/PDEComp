@@ -10,12 +10,17 @@ import run as sindy_run
 from data.dataloader import load_data
 
 
-
 RESULTS_DIR = Path("results/pysindy_noisy")
-DEFAULT_LEVELS = [0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.2, 0.3, 0.4, 0.5, 1, 2, 3, 4, 5, 10, 15, 20]
+DEFAULT_LEVELS = [0, 0.01, 0.015, 0.02, 0.03, 0.04, 0.045, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.15, 0.2, 0.3, 0.4, 0.45, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 2, 3, 3.5, 4, 5, 6, 7, 8, 9, 10, 15, 20, 21, 22, 30]
 DEFAULT_RUNS = 30
 RANDOM_SEED = 42
 DEFAULT_NOISE_SCALE = 0.01
+
+
+def noise_seed(run_index, base_seed=RANDOM_SEED):
+    """Return the seed shared by all methods for the same run index."""
+
+    return base_seed + run_index
 
 
 def add_noise(data, noise_level, scale=DEFAULT_NOISE_SCALE):
@@ -69,6 +74,7 @@ def summarize_dataset(dataset, levels, runs, base_seed):
         active_terms(clean_result, target_index)
         for target_index, _ in enumerate(clean_result["targets"])
     ]
+    is_system = len(clean_result["targets"]) > 1
 
     for noise_level in levels:
         try:
@@ -81,20 +87,31 @@ def summarize_dataset(dataset, levels, runs, base_seed):
                 }
                 for target_index, target_name in enumerate(clean_result["targets"])
             }
+            system_success_count = 0
+            system_successful_runs = []
+            system_successful_seeds = []
 
             for run_index in range(runs):
+                seed = noise_seed(run_index, base_seed)
                 result = clean_result if noise_level == 0 else run_dataset_at_noise(
                     dataset,
                     noise_level,
-                    base_seed + run_index,
+                    seed,
                 )
+                system_success = True
                 for target_index, target_name in enumerate(result["targets"]):
                     clean_terms = target_stats[target_name]["clean_terms"]
                     noisy_terms = set(active_terms(result, target_index))
                     if noisy_terms == clean_terms:
                         target_stats[target_name]["success_count"] += 1
                         target_stats[target_name]["successful_runs"].append(run_index)
-                        target_stats[target_name]["successful_seeds"].append(base_seed + run_index)
+                        target_stats[target_name]["successful_seeds"].append(seed)
+                    else:
+                        system_success = False
+                if system_success:
+                    system_success_count += 1
+                    system_successful_runs.append(run_index)
+                    system_successful_seeds.append(seed)
 
             for target_name, stats in target_stats.items():
                 rows.append({
@@ -107,6 +124,21 @@ def summarize_dataset(dataset, levels, runs, base_seed):
                     "clean_terms_count": len(stats["clean_terms"]),
                     "successful_runs": "; ".join(map(str, stats["successful_runs"])),
                     "successful_seeds": "; ".join(map(str, stats["successful_seeds"])),
+                })
+            if is_system:
+                rows.append({
+                    "dataset": dataset,
+                    "noise_level": noise_level,
+                    "target": "__system__",
+                    "runs": runs,
+                    "success_count": system_success_count,
+                    "has_success": system_success_count > 0,
+                    "clean_terms_count": sum(
+                        len(stats["clean_terms"])
+                        for stats in target_stats.values()
+                    ),
+                    "successful_runs": "; ".join(map(str, system_successful_runs)),
+                    "successful_seeds": "; ".join(map(str, system_successful_seeds)),
                 })
         except Exception as error:
             rows.append({
@@ -155,6 +187,12 @@ def print_max_success_levels(rows):
 
     print("\nMax noise level with at least one successful run:")
     for (dataset, target), target_rows in grouped.items():
+        has_system_row = any(
+            row["dataset"] == dataset and row["target"] == "__system__"
+            for row in rows
+        )
+        if has_system_row and target != "__system__":
+            continue
         successful = [
             row for row in target_rows
             if not row.get("error") and row.get("has_success")
