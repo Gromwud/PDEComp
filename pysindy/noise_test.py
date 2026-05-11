@@ -6,14 +6,14 @@ from pathlib import Path
 
 import numpy as np
 
-import noise_test
 import run as sindy_run
 from data.dataloader import load_data
 
 
 
 RESULTS_DIR = Path("results/pysindy_noisy")
-DEFAULT_LEVELS = [0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10]
+DEFAULT_LEVELS = [0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.2, 0.3, 0.4, 0.5, 1, 2, 3, 4, 5, 10, 15, 20]
+DEFAULT_RUNS = 30
 RANDOM_SEED = 42
 DEFAULT_NOISE_SCALE = 0.01
 
@@ -24,7 +24,7 @@ def add_noise(data, noise_level, scale=DEFAULT_NOISE_SCALE):
     return noise_level * scale * np.std(data) * np.random.normal(size=data.shape) + data
 
 
-def add_dataset_noise(data, filename, noise_level):
+def add_dataset_noise(data, noise_level):
     """Apply noise independently to every data variable."""
 
     if isinstance(data, list):
@@ -52,7 +52,7 @@ def run_dataset_at_noise(dataset, noise_level, seed):
 
     np.random.seed(seed)
     data, x, y, z, t = load_data(dataset)
-    noised_data = add_dataset_noise(data, dataset, noise_level)
+    noised_data = add_dataset_noise(data, noise_level)
 
     with contextlib.redirect_stdout(io.StringIO()):
         result = sindy_run.run_sindy(noised_data, x, y, z, t, dataset)
@@ -60,8 +60,8 @@ def run_dataset_at_noise(dataset, noise_level, seed):
     return result
 
 
-def summarize_dataset(dataset, levels, base_seed):
-    """Compare noisy active terms with the clean active terms."""
+def summarize_dataset(dataset, levels, runs, base_seed):
+    """Count successful noisy runs for every target and noise level."""
 
     rows = []
     clean_result = run_dataset_at_noise(dataset, 0, base_seed)
@@ -70,42 +70,55 @@ def summarize_dataset(dataset, levels, base_seed):
         for target_index, _ in enumerate(clean_result["targets"])
     ]
 
-    for level_index, noise_level in enumerate(levels):
+    for noise_level in levels:
         try:
-            result = clean_result if noise_level == 0 else run_dataset_at_noise(
-                dataset,
-                noise_level,
-                base_seed + level_index,
-            )
-            for target_index, target_name in enumerate(result["targets"]):
-                clean_terms = set(clean_terms_by_target[target_index])
-                noisy_terms = set(active_terms(result, target_index))
-                extra_terms = sorted(noisy_terms - clean_terms)
-                missing_terms = sorted(clean_terms - noisy_terms)
+            target_stats = {
+                target_name: {
+                    "clean_terms": set(clean_terms_by_target[target_index]),
+                    "success_count": 0,
+                    "successful_runs": [],
+                    "successful_seeds": [],
+                }
+                for target_index, target_name in enumerate(clean_result["targets"])
+            }
+
+            for run_index in range(runs):
+                result = clean_result if noise_level == 0 else run_dataset_at_noise(
+                    dataset,
+                    noise_level,
+                    base_seed + run_index,
+                )
+                for target_index, target_name in enumerate(result["targets"]):
+                    clean_terms = target_stats[target_name]["clean_terms"]
+                    noisy_terms = set(active_terms(result, target_index))
+                    if noisy_terms == clean_terms:
+                        target_stats[target_name]["success_count"] += 1
+                        target_stats[target_name]["successful_runs"].append(run_index)
+                        target_stats[target_name]["successful_seeds"].append(base_seed + run_index)
+
+            for target_name, stats in target_stats.items():
                 rows.append({
                     "dataset": dataset,
                     "noise_level": noise_level,
                     "target": target_name,
-                    "clean_terms_count": len(clean_terms),
-                    "noisy_terms_count": len(noisy_terms),
-                    "extra_terms_count": len(extra_terms),
-                    "missing_terms_count": len(missing_terms),
-                    "same_terms": not extra_terms and not missing_terms,
-                    "extra_terms": "; ".join(extra_terms),
-                    "missing_terms": "; ".join(missing_terms),
+                    "runs": runs,
+                    "success_count": stats["success_count"],
+                    "has_success": stats["success_count"] > 0,
+                    "clean_terms_count": len(stats["clean_terms"]),
+                    "successful_runs": "; ".join(map(str, stats["successful_runs"])),
+                    "successful_seeds": "; ".join(map(str, stats["successful_seeds"])),
                 })
         except Exception as error:
             rows.append({
                 "dataset": dataset,
                 "noise_level": noise_level,
                 "target": "",
+                "runs": runs,
+                "success_count": 0,
+                "has_success": False,
                 "clean_terms_count": "",
-                "noisy_terms_count": "",
-                "extra_terms_count": "",
-                "missing_terms_count": "",
-                "same_terms": False,
-                "extra_terms": "",
-                "missing_terms": "",
+                "successful_runs": "",
+                "successful_seeds": "",
                 "error": str(error),
             })
     return rows
@@ -119,13 +132,12 @@ def write_rows(rows, output_file):
         "dataset",
         "noise_level",
         "target",
+        "runs",
+        "success_count",
+        "has_success",
         "clean_terms_count",
-        "noisy_terms_count",
-        "extra_terms_count",
-        "missing_terms_count",
-        "same_terms",
-        "extra_terms",
-        "missing_terms",
+        "successful_runs",
+        "successful_seeds",
         "error",
     ]
     with open(output_file, "w", newline="") as handle:
@@ -134,36 +146,37 @@ def write_rows(rows, output_file):
         writer.writerows(rows)
 
 
-def print_breakpoints(rows):
-    """Print the first noise level where active terms change."""
+def print_max_success_levels(rows):
+    """Print max noise level with at least one successful run."""
 
     grouped = {}
     for row in rows:
         grouped.setdefault((row["dataset"], row["target"]), []).append(row)
 
-    print("\nFirst changed noise level:")
+    print("\nMax noise level with at least one successful run:")
     for (dataset, target), target_rows in grouped.items():
-        changed = [
+        successful = [
             row for row in target_rows
-            if row.get("error") or not row["same_terms"]
+            if not row.get("error") and row.get("has_success")
         ]
-        if changed:
-            first = changed[0]
+        if successful:
+            best = successful[-1]
             print(
-                f"  {dataset} / {target}: {first['noise_level']} "
-                f"(extra={first['extra_terms_count']}, missing={first['missing_terms_count']})"
+                f"  {dataset} / {target}: {best['noise_level']} "
+                f"({best['success_count']}/{best['runs']})"
             )
         else:
-            print(f"  {dataset} / {target}: unchanged")
+            print(f"  {dataset} / {target}: none")
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--datasets", nargs="*", default=sindy_run.DATASETS)
     parser.add_argument("--levels", nargs="*", type=float, default=DEFAULT_LEVELS)
+    parser.add_argument("--runs", type=int, default=DEFAULT_RUNS)
     parser.add_argument(
         "--output",
-        default=str(RESULTS_DIR / "noise_sweep_summary.csv"),
+        default=str(RESULTS_DIR / "noise_success_summary.csv"),
     )
     return parser.parse_args()
 
@@ -177,11 +190,12 @@ if __name__ == "__main__":
         rows = summarize_dataset(
             dataset,
             args.levels,
-            RANDOM_SEED + dataset_index * 1000,
+            args.runs,
+            RANDOM_SEED,
         )
         all_rows.extend(rows)
 
     output_file = Path(args.output)
     write_rows(all_rows, output_file)
-    print_breakpoints(all_rows)
+    print_max_success_levels(all_rows)
     print(f"\nSaved sweep summary to {output_file}")
