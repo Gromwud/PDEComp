@@ -412,7 +412,7 @@ def print_feature_library(target_name, feature_names):
 def fit_sparse_system(feature_matrix, target_vector, feature_names, target_name, filename, opt_config):
     """Fit one sparse regression problem and return results."""
 
-    print_feature_library(target_name, feature_names)
+    # print_feature_library(target_name, feature_names)
 
     optimizer = build_optimizer(opt_config)
     optimizer.fit(feature_matrix, target_vector)
@@ -521,6 +521,17 @@ def grid_values(values, shape, axis):
     return broadcast_axis(values, shape, axis=axis)
 
 
+def safe_divide_by_coordinate(values, coordinate_values):
+    """Divide by a coordinate grid while keeping zero-coordinate entries finite."""
+
+    return np.divide(
+        values,
+        coordinate_values,
+        out=np.zeros_like(values, dtype=float),
+        where=np.abs(coordinate_values) > 1e-12,
+    )
+
+
 def build_custom_tokens(token_names, bundle, data_shape, x, t):
     """Add dataset-specific tokens."""
 
@@ -551,10 +562,13 @@ def build_custom_tokens(token_names, bundle, data_shape, x, t):
             specs.append(("cos(2 t)", np.cos(2 * grid_values(t, data_shape, axis=0))))
         elif token_name == "(1/x) u":
             x_grid = grid_values(x, data_shape, axis=1)
-            specs.append(("(1/x) u", u / x_grid))
+            specs.append(("(1/x) u", safe_divide_by_coordinate(u, x_grid)))
         elif token_name == "(1/x) u_x":
             x_grid = grid_values(x, data_shape, axis=1)
-            specs.append(("(1/x) u_x", get_derivative(bundle, "u", "x", 1) / x_grid))
+            specs.append((
+                "(1/x) u_x",
+                safe_divide_by_coordinate(get_derivative(bundle, "u", "x", 1), x_grid),
+            ))
         elif token_name == "d_x(u u_x)":
             u_x = get_derivative(bundle, "u", "x", 1)
             specs.append(("d_x(u u_x)", numpy_gradient_derivative(u * u_x, x[1] - x[0], axis=1, order=1)))
