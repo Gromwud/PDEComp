@@ -276,29 +276,29 @@ sindy_params = {
     
     'kdv_data.mat': {
         'library': {'type': 'pde', 'derivative_axes': ['x', 't'], 'custom_tokens': SINDY_PDE_CUSTOM_TOKENS},
-        'optimizer': {'type': 'FROLS', 'max_iter': 3, 'alpha': 1e-3, 'normalize_columns': True, 'coefficient_tol': 0.1}
+        'optimizer': {'type': 'FROLS', 'max_iter': 3, 'alpha': 1e-5, 'normalize_columns': True, 'coefficient_tol': 0.2}
     },
 
     'kdv_periodic_data.npy': {
-        'crop': 10,
+        'crop': 3,
         'library': {'type': 'pde', 'derivative_axes': ['x', 't'], 'custom_tokens': SINDY_PDE_CUSTOM_TOKENS},
         'optimizer': {'type': 'STLSQ', 'threshold': 0.5, 'alpha': 1e-5, 'normalize_columns': False, 'coefficient_tol': 0.01}
     },
 
     'burgers_data.mat': {
         'library': {'type': 'pde', 'derivative_axes': ['x', 't'], 'custom_tokens': SINDY_PDE_CUSTOM_TOKENS},
-        'optimizer': {'type': 'STLSQ', 'threshold': 3, 'alpha': 1e-3, 'normalize_columns': True}
+        'optimizer': {'type': 'STLSQ', 'threshold': 1, 'alpha': 1e-3, 'normalize_columns': True, 'coefficient_tol': 0.01}
     },
     
     'burgers_sln_100_data.csv': {
         'library': {'type': 'pde', 'derivative_axes': ['x', 't'], 'custom_tokens': SINDY_PDE_CUSTOM_TOKENS},
-        'optimizer': {'type': 'FROLS', 'max_iter': 3, 'alpha': 1e-5, 'normalize_columns': True, 'coefficient_tol': 0.01}
+        'optimizer': {'type': 'FROLS', 'max_iter': 1, 'alpha': 1e-5, 'normalize_columns': True, 'coefficient_tol': 0.01}
     },
 
     'pde_divide_data.npy': {
         'crop': 10,
         'library': {'type': 'pde', 'derivative_axes': ['x', 't'], 'custom_tokens': SINDY_PDE_CUSTOM_TOKENS},
-        'optimizer': {'type': 'FROLS', 'max_iter': 8, 'alpha': 1e-5, 'normalize_columns': True, 'coefficient_tol': 0.05}
+        'optimizer': {'type': 'FROLS', 'max_iter': 8, 'alpha': 1e-5, 'normalize_columns': True, 'coefficient_tol': 0.2}
     },
 
     'pde_compound_data.npy': {
@@ -333,7 +333,7 @@ sindy_params = {
     'vdp_data.npy': {
         'targets': [{'name': 'u_tt', 'variable': 'u', 'axis': 't', 'order': 2}],
         'library': {'type': 'polynomial', 'derivative_axes': ['t'], 'custom_tokens': SINDY_ODE_CUSTOM_TOKENS},
-        'optimizer': {'type': 'STLSQ', 'threshold': 1, 'alpha': 1e-10, 'normalize_columns': True, 'coefficient_tol': 0.1}
+        'optimizer': {'type': 'FROLS', 'max_iter': 5, 'alpha': 1e-5, 'normalize_columns': True, 'coefficient_tol': 0.1}
     },
 
     'ode_data.npy': {
