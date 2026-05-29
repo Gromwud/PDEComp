@@ -18,7 +18,6 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 # Copy only what's needed (consider .dockerignore)
 COPY epde/run.py .
-COPY epde/config.py .
 COPY data /app/data
 
 # Create results directory at runtime rather than build time

@@ -7,9 +7,7 @@ epde_params = {
         'boundary': (10, 10),
         'default_preprocessor_type': 'poly',
         'variable_names': ['u', ],
-        'max_deriv_order': (2, 3),
         'equation_terms_max_number': 5,
-        'data_fun_pow': 3,
         'additional_tokens': None,
         'equation_factors_max_number': {'factors_num': [1, 2], 'probas': [0.8, 0.2]},
         'eq_sparsity_interval': (1e-6, 1e-0),
@@ -25,9 +23,7 @@ epde_params = {
         'boundary': 20,
         'default_preprocessor_type': 'FD',
         'variable_names': ['u', ],
-        'max_deriv_order': (2, 3),
         'equation_terms_max_number': 5,
-        'data_fun_pow': 3,
         'additional_tokens': None,
         'equation_factors_max_number': {"factors_num": [1, 2], "probas": [0.65, 0.35]},
         'eq_sparsity_interval': (1e-5, 1e-2),
@@ -42,9 +38,7 @@ epde_params = {
         'boundary': 10,
         'default_preprocessor_type': 'FD',
         'variable_names': ['u', ],
-        'max_deriv_order': (1, 3),
         'equation_terms_max_number': 5,
-        'data_fun_pow': 1,
         'additional_tokens': None,
         'equation_factors_max_number': {"factors_num": [1, 2], "probas": [0.65, 0.35]},
         'eq_sparsity_interval': (1e-5, 1e-2),
@@ -60,9 +54,7 @@ epde_params = {
         'boundary': 20,
         'default_preprocessor_type': 'FD',
         'variable_names': ['u', ],
-        'max_deriv_order': (2, 3),
         'equation_terms_max_number': 5,
-        'data_fun_pow': 3,
         'additional_tokens': None,
         'equation_factors_max_number': {"factors_num": [1, 2], "probas": [0.65, 0.35]},
         'eq_sparsity_interval': (1e-4, 1e-0),
@@ -78,9 +70,7 @@ epde_params = {
         'boundary': 5,
         'default_preprocessor_type': 'FD',
         'variable_names': ['u'],
-        'max_deriv_order': (1, 4),
         'equation_terms_max_number': 10,
-        'data_fun_pow': 1,
         'additional_tokens': None,
         'equation_factors_max_number': {"factors_num": [1, 2], "probas": [0.65, 0.35]},
         'eq_sparsity_interval': (1e-12, 1e-0),
@@ -95,9 +85,7 @@ epde_params = {
         'boundary': 20,
         'default_preprocessor_type': 'FD',
         'variable_names': ['u'],
-        'max_deriv_order': (2, 3),
         'equation_terms_max_number': 5,
-        'data_fun_pow': 1,
         'additional_tokens': 'CacheStoredTokens',
         'equation_factors_max_number': {"factors_num": [1, 2], "probas": [0.65, 0.35]},
         'eq_sparsity_interval': (1e-9, 1e-2),
@@ -112,9 +100,7 @@ epde_params = {
         'boundary': 20,
         'default_preprocessor_type': 'FD',
         'variable_names': ['u'],
-        'max_deriv_order': (2, 3),
         'equation_terms_max_number': 5,
-        'data_fun_pow': 1,
         'additional_tokens': 'CacheStoredTokens',
         'equation_factors_max_number': {"factors_num": [1, 2], "probas": [0.65, 0.35]},
         'eq_sparsity_interval': (1e-9, 1e-2),
@@ -129,9 +115,7 @@ epde_params = {
         'boundary': 10,
         'default_preprocessor_type': 'FD',
         'variable_names': ['u', 'v', 'w'],
-        'max_deriv_order': (1,),
         'equation_terms_max_number': 5,
-        'data_fun_pow': 1,
         'additional_tokens': 'TrigonometricTokens',
         'equation_factors_max_number': {'factors_num': [1, 2], 'probas' : [0.8, 0.2]},
         'eq_sparsity_interval': (1e-4, 1e-0),
@@ -148,9 +132,7 @@ epde_params = {
         'boundary': 10,
         'default_preprocessor_type': 'FD',
         'variable_names': ['u', 'v'],
-        'max_deriv_order': (1,),
         'equation_terms_max_number': 5,
-        'data_fun_pow': 1,
         'additional_tokens': 'TrigonometricTokens',
         'equation_factors_max_number': {'factors_num': [1, 2], 'probas' : [0.8, 0.2]},
         'eq_sparsity_interval': (1e-4, 1e-0),
@@ -167,9 +149,7 @@ epde_params = {
         'boundary': 10,
         'default_preprocessor_type': 'FD',
         'variable_names': ['u'],
-        'max_deriv_order': (2, 2),
         'equation_terms_max_number': 5,
-        'data_fun_pow': 1,
         'additional_tokens': 'TrigonometricTokens, GridTokens',
         'equation_factors_max_number': {"factors_num": [1, 2], "probas": [0.65, 0.35]},
         'eq_sparsity_interval': (1e-12, 1e-4),
@@ -186,9 +166,7 @@ epde_params = {
         'boundary': 10,
         'default_preprocessor_type': 'FD',
         'variable_names': ['u'],
-        'max_deriv_order': (1, 3),
         'equation_terms_max_number': 5,
-        'data_fun_pow': 1,
         'additional_tokens': 'custom_trig_tokens',
         'equation_factors_max_number': {"factors_num": [1, 2], "probas": [0.65, 0.35]},
         'eq_sparsity_interval': (1e-10, 1e-2),
@@ -203,9 +181,7 @@ epde_params = {
         'boundary': 10,
         'default_preprocessor_type': 'FD',
         'variable_names': ['u'],
-        'max_deriv_order': (2, 2),
         'equation_terms_max_number': 5,
-        'data_fun_pow': 2,
         'additional_tokens': 'TrigonometricTokens, GridTokens',
         'equation_factors_max_number': {"factors_num": [1, 2], "probas": [0.65, 0.35]},
         'eq_sparsity_interval': (1e-8, 1e-0),
@@ -222,9 +198,7 @@ epde_params = {
         'boundary': 20,
         'default_preprocessor_type': 'FD',
         'variable_names': ['u'],
-        'max_deriv_order': (2, 3),
         'equation_terms_max_number': 5,
-        'data_fun_pow': 3,
         'additional_tokens': None,
         'equation_factors_max_number': {"factors_num": [1, 2], "probas": [0.65, 0.35]},
         'eq_sparsity_interval': (1e-12, 1e-2),
@@ -240,9 +214,7 @@ epde_params = {
         'boundary': 5,
         'default_preprocessor_type': 'FD',
         'variable_names': ['u', 'v', 'p'],
-        'max_deriv_order': (1, 2, 2),
         'equation_terms_max_number': 10,
-        'data_fun_pow': 1,
         'additional_tokens': None,
         'equation_factors_max_number': {'factors_num': [1, 2], 'probas': [0.8, 0.2]},
         'eq_sparsity_interval': (1e-12, 1e-0),
@@ -258,9 +230,7 @@ epde_params = {
         'boundary': 10,
         'default_preprocessor_type': 'FD',
         'variable_names': ['u'],
-        'max_deriv_order': (2, 3),
         'equation_terms_max_number': 5,
-        'data_fun_pow': 3,
         'additional_tokens': 'ODE_simple_discovery',
         'equation_factors_max_number': {"factors_num": [1, 2], "probas": [0.65, 0.35]},
         'eq_sparsity_interval': (1e-4, 1e-0),
@@ -268,4 +238,129 @@ epde_params = {
         'coordinate_tensors': '1d',
         'trig_tokens_freq': (0.999, 1.001)
     },
+}
+
+COMMON_PARAMS = {
+    'max_deriv_order': (2, 4),
+    'data_fun_pow': 3,
+    'equation_factors_max_number': 2,
+    'include_bias': True
+}
+
+
+SINDY_PDE_CUSTOM_TOKENS = [
+    't',
+    'x',
+    'sin(x)',
+    'cos(t)',
+    'sin(x) cos(t)',
+    'cos(x) sin(t)',
+    '(1/x) u',
+    '(1/x) u_x',
+    'd_x(u u_x)',
+]
+
+SINDY_ODE_CUSTOM_TOKENS = [
+    't',
+    'sin(t)',
+    'cos(t)',
+    'u_t sin(2 t)',
+]
+
+
+sindy_params = {
+    'ac_data.npy': {
+        'library': {'type': 'pde', 'derivative_axes': ['x', 't'], 'custom_tokens': SINDY_PDE_CUSTOM_TOKENS},
+        'optimizer': {'type': 'FROLS', 'max_iter': 3, 'alpha': 1e-5, 'normalize_columns': True, 'coefficient_tol': 0.01}
+    },
+    
+    'kdv_data.mat': {
+        'library': {'type': 'pde', 'derivative_axes': ['x', 't'], 'custom_tokens': SINDY_PDE_CUSTOM_TOKENS},
+        'optimizer': {'type': 'FROLS', 'max_iter': 3, 'alpha': 1e-5, 'normalize_columns': True, 'coefficient_tol': 0.2}
+    },
+
+    'kdv_periodic_data.npy': {
+        'crop': 3,
+        'library': {'type': 'pde', 'derivative_axes': ['x', 't'], 'custom_tokens': SINDY_PDE_CUSTOM_TOKENS},
+        'optimizer': {'type': 'STLSQ', 'threshold': 0.5, 'alpha': 1e-5, 'normalize_columns': False, 'coefficient_tol': 0.01}
+    },
+
+    'burgers_data.mat': {
+        'library': {'type': 'pde', 'derivative_axes': ['x', 't'], 'custom_tokens': SINDY_PDE_CUSTOM_TOKENS},
+        'optimizer': {'type': 'STLSQ', 'threshold': 1, 'alpha': 1e-3, 'normalize_columns': True, 'coefficient_tol': 0.01}
+    },
+    
+    'burgers_sln_100_data.csv': {
+        'library': {'type': 'pde', 'derivative_axes': ['x', 't'], 'custom_tokens': SINDY_PDE_CUSTOM_TOKENS},
+        'optimizer': {'type': 'FROLS', 'max_iter': 1, 'alpha': 1e-5, 'normalize_columns': True, 'coefficient_tol': 0.01}
+    },
+
+    'pde_divide_data.npy': {
+        'crop': 10,
+        'library': {'type': 'pde', 'derivative_axes': ['x', 't'], 'custom_tokens': SINDY_PDE_CUSTOM_TOKENS},
+        'optimizer': {'type': 'FROLS', 'max_iter': 8, 'alpha': 1e-5, 'normalize_columns': True, 'coefficient_tol': 0.2}
+    },
+
+    'pde_compound_data.npy': {
+        'crop': 10,
+        'library': {'type': 'pde', 'derivative_axes': ['x', 't'], 'custom_tokens': SINDY_PDE_CUSTOM_TOKENS},
+        'optimizer': {'type': 'FROLS', 'max_iter': 3, 'alpha': 1e-5, 'normalize_columns': True, 'coefficient_tol': 0.05}
+    },
+
+    'ks_data.mat': {
+        'crop': 5,
+        'library': {'type': 'pde', 'derivative_axes': ['x', 't'], 'diff_kwargs': {'periodic': True}, 'custom_tokens': SINDY_PDE_CUSTOM_TOKENS},
+        'optimizer': {'type': 'FROLS', 'max_iter': 3, 'alpha': 1e-5, 'normalize_columns': True, 'coefficient_tol': 0.01}
+    },
+
+    'wave_data.csv': {
+        'crop': 10,
+        'targets': [{'name': 'u_tt', 'variable': 'u', 'axis': 't', 'order': 2}],
+        'library': {'type': 'pde', 'derivative_axes': ['x', 't'], 'custom_tokens': SINDY_PDE_CUSTOM_TOKENS},
+        'optimizer': {'type': 'FROLS', 'max_iter': 3, 'alpha': 1e-5, 'normalize_columns': True, 'coefficient_tol': 0.01}
+    },
+
+    'lorenz_data.npy': {
+        'library': {'type': 'polynomial', 'data_fun_pow': 2, 'variable_names': ['x0', 'x1', 'x2'], 'polynomial_variables': ['x0', 'x1', 'x2'], 'custom_tokens': ['t']},
+        'optimizer': {'type': 'STLSQ', 'threshold': 0.5, 'alpha': 0.5, 'normalize_columns': False}
+    },
+
+    'lotka_data.npy': {
+        'library': {'type': 'polynomial', 'data_fun_pow': 2, 'variable_names': ['x0', 'x1'], 'polynomial_variables': ['x0', 'x1'], 'custom_tokens': ['t']},
+        'optimizer': {'type': 'STLSQ', 'threshold': 1, 'alpha': 0.5, 'normalize_columns': False}
+    },
+
+    'vdp_data.npy': {
+        'targets': [{'name': 'u_tt', 'variable': 'u', 'axis': 't', 'order': 2}],
+        'library': {'type': 'polynomial', 'derivative_axes': ['t'], 'custom_tokens': SINDY_ODE_CUSTOM_TOKENS},
+        'optimizer': {'type': 'FROLS', 'max_iter': 5, 'alpha': 1e-5, 'normalize_columns': True, 'coefficient_tol': 0.1}
+    },
+
+    'ode_data.npy': {
+        'crop': 10,
+        'targets': [{'name': 'u_tt', 'variable': 'u', 'axis': 't', 'order': 2}],
+        'library': {'type': 'polynomial', 'derivative_axes': ['t'], 'custom_tokens': SINDY_ODE_CUSTOM_TOKENS},
+        'optimizer': {'type': 'STLSQ', 'threshold': 1e-6, 'alpha': 1e-10, 'normalize_columns': True, 'coefficient_tol': 0.1}
+    },
+
+    'ns_data.mat': {
+        'targets': [
+            {'name': 'u_t', 'variable': 'u', 'axis': 't', 'order': 1},
+            {'name': 'v_t', 'variable': 'v', 'axis': 't', 'order': 1},
+            {'name': 'u_x', 'variable': 'u', 'axis': 'x', 'order': 1, 'feature_tokens': ['v_y']}
+        ],
+        'library': {
+            'type': 'navier_stokes',
+            'data_fun_pow': 1,
+            'max_deriv_order': (1, 2, 2),
+            'variable_names': ['u', 'v', 'p'],
+        },
+        'optimizer': {'type': 'STLSQ', 'threshold': 0.08, 'alpha': 1e-5, 'normalize_columns': True, 'coefficient_tol': 0.01}
+    },
+
+    'ODE_simple_discovery': {
+        'targets': [{'name': 'u_t', 'variable': 'u', 'axis': 't', 'order': 1}],
+        'library': {'type': 'poly_and_fourier', 'derivative_axes': ['t'], 'n_frequencies': 1, 'custom_tokens': SINDY_ODE_CUSTOM_TOKENS},
+        'optimizer': {'type': 'STLSQ', 'threshold': 1, 'alpha': 1e-5, 'normalize_columns': True}
+    }
 }

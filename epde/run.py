@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 from epde.interface.interface import EpdeSearch
 from epde.interface.prepared_tokens import CustomTokens, CustomEvaluator
 from epde import TrigonometricTokens, GridTokens, CacheStoredTokens
@@ -9,35 +10,37 @@ import time
 from datetime import datetime
 
 from data.dataloader import load_data
-from config import epde_params
+from data.config import epde_params, COMMON_PARAMS
+from data.derivatives import build_epde_derivatives
 
 DATA_DIR = Path("data")
 RESULTS_DIR = Path("results/epde")
 DATASETS = [
-    "ode_data.npy",
-    "vdp_data.npy",
+    # "ode_data.npy",
+    # "vdp_data.npy",
 
-    "lorenz_data.npy",
-    "lotka_data.npy",
+    # "lorenz_data.npy",
+    # "lotka_data.npy",
 
-    "burgers_data.mat",
-    "ac_data.npy",
-    "kdv_data.mat",
-    "kdv_periodic_data.npy",
-    "wave_data.csv",
-    "pde_divide_data.npy",
+    # "burgers_data.mat",
+    # "ac_data.npy",
+    # "kdv_data.mat",
+    # "kdv_periodic_data.npy",
+    # "wave_data.csv",
+    # "pde_divide_data.npy",
     "pde_compound_data.npy",
-    "ns_data.mat",
-    "ks_data.mat",
+    # "ns_data.mat",
+    # "ks_data.mat",
     
-    "burgers_sln_100_data.csv",
+    # "burgers_sln_100_data.csv",
     
-    "ODE_simple_discovery"
+    # "ODE_simple_discovery"
 ]
 
 
 def save_combined_results(results):
-    """Save results to a common JSON file"""
+    """Save all dataset results into one JSON file."""
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_file = RESULTS_DIR / f"results_{timestamp}.json"
     output_file.parent.mkdir(exist_ok=True)
@@ -51,6 +54,8 @@ def save_combined_results(results):
 
 
 def get_coordinate_tensors(coordinate_tensors, t, x, y, z):
+    """Build coordinate tensors in the format expected by EPDE."""
+
     if coordinate_tensors == None:
         # 2d
         return np.meshgrid(t, x, indexing = 'ij')
@@ -63,6 +68,8 @@ def get_coordinate_tensors(coordinate_tensors, t, x, y, z):
 
 
 def get_additional_tokens(additional_tokens, grid, data, trig_tokens_freq):
+    """Create optional EPDE token families configured for a dataset."""
+
     if additional_tokens == None:
         return []
 
@@ -133,11 +140,31 @@ def get_additional_tokens(additional_tokens, grid, data, trig_tokens_freq):
         return [custom_trig_tokens]
 
 
+def normalize_epde_max_deriv_order(max_deriv_order, data):
+    """Interpret (time, spatial) derivative limits for any dataset dimensionality."""
+
+    ndim = np.asarray(data).ndim
+    if isinstance(max_deriv_order, int):
+        return tuple([max_deriv_order] * ndim)
+
+    orders = tuple(max_deriv_order)
+    if len(orders) == ndim:
+        return orders
+    if len(orders) > ndim:
+        return orders[:ndim]
+    if len(orders) == 2 and ndim > 2:
+        return (orders[0],) + tuple([orders[1]] * (ndim - 1))
+
+    raise ValueError(f"Expected derivative order for {ndim} axes, got {max_deriv_order}")
+
+
 def run_epde(data, x, y, z, t, filename):
-    """Основная логика идентификации"""
+    """Run EPDE discovery for one configured dataset."""
+
     start = time.perf_counter()
 
     params = epde_params[filename]
+    epde_data = data if isinstance(data, list) else [data]
     
     use_solver = params["use_solver"]
     use_pic = params["use_pic"]
@@ -147,10 +174,10 @@ def run_epde(data, x, y, z, t, filename):
     population_size = params["population_size"]
     training_epochs = params["training_epochs"]
 
-    max_deriv_order = params["max_deriv_order"]
+    max_deriv_order = normalize_epde_max_deriv_order(params.get("max_deriv_order", COMMON_PARAMS["max_deriv_order"]), epde_data[0])
     derivs = params.get("derivs", None)
     equation_terms_max_number = params["equation_terms_max_number"]
-    data_fun_pow = params["data_fun_pow"]
+    data_fun_pow = params.get("data_fun_pow", COMMON_PARAMS["data_fun_pow"])
     additional_tokens = params.get("additional_tokens", None)
     equation_factors_max_number = params["equation_factors_max_number"]
     eq_sparsity_interval = params["eq_sparsity_interval"]
@@ -162,6 +189,16 @@ def run_epde(data, x, y, z, t, filename):
 
 
     grid = get_coordinate_tensors(coordinate_tensors, t, x, y, z)        
+    if derivs is None:
+        derivs = build_epde_derivatives(
+            data=epde_data,
+            x=x,
+            y=y,
+            z=z,
+            t=t,
+            variable_names=variable_names,
+            max_deriv_order=max_deriv_order,
+        )
 
     epde_search_obj = EpdeSearch(
         use_solver=use_solver,
@@ -180,13 +217,13 @@ def run_epde(data, x, y, z, t, filename):
                                         training_epochs=training_epochs)
 
     epde_search_obj.fit(
-        data=data,
+        data=epde_data,
         variable_names=variable_names,
         max_deriv_order=max_deriv_order,
         derivs=derivs,
         equation_terms_max_number=equation_terms_max_number,
         data_fun_pow=data_fun_pow,
-        additional_tokens=get_additional_tokens(additional_tokens, grid, data, trig_tokens_freq),
+        additional_tokens=get_additional_tokens(additional_tokens, grid, epde_data, trig_tokens_freq),
         equation_factors_max_number=equation_factors_max_number,
         eq_sparsity_interval=eq_sparsity_interval,
         fourier_layers=fourier_layers
