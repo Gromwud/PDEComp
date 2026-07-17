@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 
 from data.config import TRUE_COEFFICIENTS
-from data.dataloader import load_data
+from utils.dataloader import load_data
 
 
 ROOT = Path(__file__).resolve().parent

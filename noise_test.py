@@ -13,8 +13,9 @@ from clean_run_metrics import (
     load_framework_module,
     normalize_result,
     normalize_target,
+    select_best_epde_candidate,
 )
-from data.dataloader import load_data
+from utils.dataloader import load_data
 
 
 ROOT = Path(__file__).resolve().parent
@@ -107,6 +108,9 @@ def run_dataset_at_noise(dataset, noise_level, seed, framework="pysindy", module
 
     with contextlib.redirect_stdout(io.StringIO()):
         result = run_framework_on_data(framework, module, noised_data, x, y, z, t, dataset, args=args)
+
+    if framework == "epde" and getattr(args, "epde_best_pareto", False):
+        result = select_best_epde_candidate(dataset, result)
 
     return normalize_result(result)
 

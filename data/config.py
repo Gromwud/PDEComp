@@ -248,6 +248,141 @@ COMMON_PARAMS = {
 }
 
 
+EPDE_DEFAULT_FACTORS = {'factors_num': [1, 2], 'probas': [0.65, 0.35]}
+EPDE_DEFAULT_SPARSITY = (1e-12, 1e-4)
+EPDE_DEFAULT_TRIG_FREQ = (1.99999999, 2.00000001)
+
+
+def _apply_epde_working_configs():
+    """Store the working EPDE settings directly in this file."""
+
+    pde_common = {
+        'population_size': 16,
+        'training_epochs': 5,
+        'use_solver': False,
+        'multiobjective_mode': True,
+        'use_pic': True,
+        'boundary': 'auto_10pct',
+        'default_preprocessor_type': 'FD',
+        'equation_terms_max_number': 10,
+        'additional_tokens': ['GridTokens', 'TrigonometricTokens', 'sindy_pde_custom_tokens'],
+        'equation_factors_max_number': EPDE_DEFAULT_FACTORS,
+        'eq_sparsity_interval': EPDE_DEFAULT_SPARSITY,
+        'fourier_layers': False,
+        'epde_pipeline': 'new',
+        'data_fun_pow': 3,
+        'deriv_fun_pow': 1,
+        'max_deriv_order': (2, 4),
+        'trig_tokens_freq': EPDE_DEFAULT_TRIG_FREQ,
+    }
+    for dataset in (
+        'burgers_sln_100_data.csv',
+        'ac_data.npy',
+        'kdv_data.mat',
+        'burgers_data.mat',
+        'ks_data.mat',
+        'pde_divide_data.npy',
+        'pde_compound_data.npy',
+        'wave_data.csv',
+    ):
+        epde_params[dataset].update(pde_common)
+
+    epde_params['kdv_periodic_data.npy'].update({
+        **pde_common,
+        'additional_tokens': [
+            'GridTokens',
+            'TrigonometricTokens',
+            'custom_trig_tokens',
+            'sindy_pde_custom_tokens',
+        ],
+    })
+
+    epde_params['ns_data.mat'].update({
+        **pde_common,
+        'population_size': 48,
+        'variable_names': ['u', 'v', 'p'],
+        'additional_tokens': ['GridTokens', 'TrigonometricTokens'],
+        'coordinate_tensors': '3d',
+        'deriv_fun_pow': 2,
+        'max_deriv_order': (2, 4, 4),
+    })
+
+    epde_params['lorenz_data.npy'].update({
+        'population_size': 48,
+        'training_epochs': 5,
+        'use_solver': False,
+        'multiobjective_mode': True,
+        'use_pic': True,
+        'boundary': 'auto_10pct',
+        'default_preprocessor_type': 'FD',
+        'variable_names': ['u', 'v', 'w'],
+        'equation_terms_max_number': 10,
+        'additional_tokens': None,
+        'equation_factors_max_number': EPDE_DEFAULT_FACTORS,
+        'eq_sparsity_interval': EPDE_DEFAULT_SPARSITY,
+        'fourier_layers': False,
+        'coordinate_tensors': '1d',
+        'trig_tokens_freq': EPDE_DEFAULT_TRIG_FREQ,
+        'epde_pipeline': 'new',
+        'data_fun_pow': 2,
+        'deriv_fun_pow': 1,
+        'max_deriv_order': (1,),
+    })
+
+    epde_params['lotka_data.npy'].update({
+        'population_size': 8,
+        'training_epochs': 5,
+        'use_solver': False,
+        'multiobjective_mode': True,
+        'use_pic': True,
+        'boundary': 10,
+        'default_preprocessor_type': 'FD',
+        'variable_names': ['u', 'v'],
+        'equation_terms_max_number': 5,
+        'additional_tokens': None,
+        'equation_factors_max_number': {'factors_num': [1, 2], 'probas': [0.5, 0.5]},
+        'eq_sparsity_interval': (1e-10, 1e-1),
+        'fourier_layers': False,
+        'coordinate_tensors': '1d',
+        'trig_tokens_freq': EPDE_DEFAULT_TRIG_FREQ,
+        'epde_pipeline': 'new',
+        'data_fun_pow': 2,
+        'deriv_fun_pow': 1,
+        'max_deriv_order': (1,),
+    })
+
+    epde_params['ode_data.npy'].update({
+        'multiobjective_mode': True,
+        'epde_pipeline': 'new',
+        'data_fun_pow': 3,
+        'deriv_fun_pow': 1,
+        'max_deriv_order': (2,),
+        'trig_tokens_freq': EPDE_DEFAULT_TRIG_FREQ,
+        'equation_factors_max_number': EPDE_DEFAULT_FACTORS,
+        'eq_sparsity_interval': EPDE_DEFAULT_SPARSITY,
+    })
+
+    epde_params['vdp_data.npy'].update({
+        'multiobjective_mode': True,
+        'epde_pipeline': 'new',
+        'data_fun_pow': 3,
+        'deriv_fun_pow': 1,
+        'max_deriv_order': (2,),
+        'trig_tokens_freq': EPDE_DEFAULT_TRIG_FREQ,
+        'equation_factors_max_number': EPDE_DEFAULT_FACTORS,
+        'eq_sparsity_interval': (1e-8, 1e-0),
+    })
+
+    epde_params['ODE_simple_discovery'].update({
+        'max_deriv_order': (2,),
+        'data_fun_pow': 3,
+        'deriv_fun_pow': 1,
+    })
+
+
+_apply_epde_working_configs()
+
+
 SINDY_PDE_CUSTOM_TOKENS = [
     't',
     'x',
@@ -363,4 +498,179 @@ sindy_params = {
         'library': {'type': 'poly_and_fourier', 'derivative_axes': ['t'], 'n_frequencies': 1, 'custom_tokens': SINDY_ODE_CUSTOM_TOKENS},
         'optimizer': {'type': 'STLSQ', 'threshold': 1, 'alpha': 1e-5, 'normalize_columns': True}
     }
+}
+
+
+DEEPMOD_DEFAULTS = {
+    'direct_optimizer': {},
+}
+
+
+deepmod_params = {
+    'ode_data.npy': {
+        'direct_optimizer': {'type': 'pdefind', 'pdefind_lam': 1e-6, 'pdefind_dtol': 1e-4, 'coefficient_tol': 0.5},
+    },
+    'vdp_data.npy': {
+        'direct_optimizer': {'type': 'pdefind', 'pdefind_lam': 1e-12, 'pdefind_dtol': 1e-3, 'coefficient_tol': 0.0},
+    },
+    'lorenz_data.npy': {
+        'direct_optimizer': {'type': 'pdefind', 'pdefind_lam': 1e-12, 'pdefind_dtol': 0.1, 'coefficient_tol': 0.0},
+    },
+    'lotka_data.npy': {
+        'direct_optimizer': {'type': 'pdefind', 'pdefind_lam': 1e-6, 'pdefind_dtol': 1e-3, 'coefficient_tol': 0.0},
+    },
+    'burgers_data.mat': {
+        'direct_optimizer': {'type': 'pdefind', 'pdefind_lam': 1e-12, 'pdefind_dtol': 0.01, 'coefficient_tol': 0.0},
+    },
+    'ac_data.npy': {
+        'direct_optimizer': {'type': 'pdefind', 'pdefind_lam': 0.01, 'pdefind_dtol': 1e-3, 'coefficient_tol': 0.01},
+    },
+    'kdv_data.mat': {
+        'direct_optimizer': {'type': 'threshold', 'threshold': 1e-6, 'coefficient_tol': 0.5},
+    },
+    'kdv_periodic_data.npy': {
+        'direct_optimizer': {'type': 'pdefind', 'pdefind_lam': 1e-12, 'pdefind_dtol': 1e-3, 'coefficient_tol': 0.0},
+    },
+    'wave_data.csv': {
+        'direct_optimizer': {'type': 'pdefind', 'pdefind_lam': 0.01, 'pdefind_dtol': 0.5, 'coefficient_tol': 0.0},
+    },
+    'pde_divide_data.npy': {
+        'direct_optimizer': {'type': 'pdefind', 'pdefind_lam': 1e-6, 'pdefind_dtol': 0.5, 'coefficient_tol': 0.0},
+    },
+    'pde_compound_data.npy': {
+        'direct_optimizer': {'type': 'pdefind', 'pdefind_lam': 1e-4, 'pdefind_dtol': 0.5, 'coefficient_tol': 0.0},
+    },
+    'ns_data.mat': {
+        'direct_optimizer': {'type': 'pdefind', 'pdefind_lam': 0.01, 'pdefind_dtol': 0.5, 'coefficient_tol': 0.0},
+    },
+    'ks_data.mat': {
+        'direct_optimizer': {'type': 'threshold', 'threshold': 0.05, 'coefficient_tol': 0.05},
+    },
+    'burgers_sln_100_data.csv': {
+        'direct_optimizer': {'type': 'pdefind', 'pdefind_lam': 1e-4, 'pdefind_dtol': 0.5, 'coefficient_tol': 0.0},
+    },
+    'ODE_simple_discovery': {
+        'direct_optimizer': {'type': 'pdefind', 'pdefind_lam': 1e-8, 'pdefind_dtol': 1e-3, 'coefficient_tol': 0.0},
+    },
+}
+
+
+DEEPMOD_DATASETS = list(deepmod_params.keys())
+
+TRUE_COEFFICIENTS = {
+    "ode_data.npy": {
+        "u_tt": {
+            "u_t sin(2 t)": -1.0,
+            "t": 1.5,
+            "u": -4.0,
+        },
+    },
+    "vdp_data.npy": {
+        "u_tt": {
+            "u_t": 0.2,
+            "u^2 u_t": -0.2,
+            "u": -1.0,
+        },
+    },
+    "lotka_data.npy": {
+        "x0_t": {
+            "x0": 20.0,
+            "x0 x1": -20.0,
+        },
+        "x1_t": {
+            "x0 x1": 20.0,
+            "x1": -20.0,
+        },
+    },
+    "lorenz_data.npy": {
+        "x0_t": {
+            "x0": -10.0,
+            "x1": 10.0,
+        },
+        "x1_t": {
+            "x0": 28.0,
+            "x0 x2": -1.0,
+            "x1": -1.0,
+        },
+        "x2_t": {
+            "x0 x1": 1.0,
+            "x2": -8.0 / 3.0,
+        },
+    },
+    "burgers_data.mat": {
+        "u_t": {
+            "u u_x": -1.0,
+            "u_xx": 0.1,
+        },
+    },
+    "burgers_sln_100_data.csv": {
+        "u_t": {
+            "u u_x": -1.0,
+        },
+    },
+    "ac_data.npy": {
+        "u_t": {
+            "u^3": -5.0,
+            "u": 5.0,
+        },
+    },
+    "kdv_data.mat": {
+        "u_t": {
+            "u u_x": -6.0,
+            "u_xxx": -1.0,
+        },
+    },
+    "kdv_periodic_data.npy": {
+        "u_t": {
+            "u u_x": -6.0,
+            "u_xxx": -1.0,
+            "sin(x) cos(t)": 1.0,
+        },
+    },
+    "wave_data.csv": {
+        "u_tt": {
+            "u_xx": 0.04,
+        },
+    },
+    "pde_compound_data.npy": {
+        "u_t": {
+            "d_x(u u_x)": 1.0,
+        },
+    },
+    "pde_divide_data.npy": {
+        "u_t": {
+            "u_xx": 0.25,
+            "(1/x) u_x": -1.0,
+        },
+    },
+    "ks_data.mat": {
+        "u_t": {
+            "u u_x": -1.0,
+            "u_xx": -1.0,
+            "u_xxxx": -1.0,
+        },
+    },
+    "ns_data.mat": {
+        "u_t": {
+            "u u_x": -1.0,
+            "v u_y": -1.0,
+            "p_x": -1.0,
+            "(u_xx + u_yy)": 0.01,
+        },
+        "v_t": {
+            "u v_x": -1.0,
+            "v v_y": -1.0,
+            "p_y": -1.0,
+            "(v_xx + v_yy)": 0.01,
+        },
+        "u_x": {
+            "v_y": -1.0,
+        },
+    },
+    "ODE_simple_discovery": {
+        "u_t": {
+            "cos(t)": 1.0,
+            "sin(t)": -1.3,
+        },
+    },
 }
