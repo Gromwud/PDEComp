@@ -1,8 +1,14 @@
 services:
-  pysindy:
+  benchmark:
     build:
       context: .
-      dockerfile: pysindy/Dockerfile
+      dockerfile: Dockerfile
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - PYTHONPATH=/app
+    volumes:
+      - ./data:/app/data:ro
+      - ./results:/app/results
     deploy:
       resources:
         reservations:
@@ -10,77 +16,4 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
-    volumes:
-      - ./data:/app/data:ro
-      - ./results:/app/results
-
-  epde:
-    build:
-      context: .
-      dockerfile: epde/Dockerfile
-    deploy: 
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
-    volumes:
-      - ./data:/app/data:ro
-      - ./results:/app/results
-
-  discover:
-    build:
-      context: .
-      dockerfile: discover/Dockerfile
-    deploy:  
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
-    volumes:
-      - ./data:/app/data:ro
-      - ./results:/app/results
-  
-  # sga-pde:
-  #   build:
-  #     context: .
-  #     dockerfile: sga-pde/Dockerfile
-  #   deploy:  
-  #     resources:
-  #       reservations:
-  #         devices:
-  #           - driver: nvidia
-  #             count: 1
-  #             capabilities: [gpu]
-  #   environment:
-  #     - NVIDIA_VISIBLE_DEVICES=all
-  #   volumes:
-  #     - ./data:/app/data:ro
-  #     - ./results:/app/results
-  
-  deepmod:
-    build:
-      context: .
-      dockerfile: deepmod/Dockerfile
-    deploy: 
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
-    volumes:
-      - ./data:/app/data:ro
-      - ./results:/app/results
-  
+    command: ["python", "clean_run_metrics.py", "all"]

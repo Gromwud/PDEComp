@@ -55,6 +55,26 @@ python noise_boundary_metrics.py deepmod --boundaries-csv results\deepmod\noise_
 
 It reports HD across all noisy runs and RE only for structurally correct runs.
 
+## Docker
+
+The benchmark uses one Docker image for all supported runners:
+
+```powershell
+docker compose build
+docker compose run --rm benchmark
+```
+
+The default command runs clean metrics for all frameworks. Any benchmark script
+can be run through the same container:
+
+```powershell
+docker compose run --rm benchmark python clean_run_metrics.py pysindy
+docker compose run --rm benchmark python noise_test.py deepmod --datasets ac_data.npy --levels 10 15 20
+docker compose run --rm benchmark python noise_boundary_metrics.py pysindy --boundaries-csv results/pysindy_noisy/noise_manual_3_5_summary.csv
+```
+
+The container mounts `data/` as read-only and writes outputs to `results/`.
+
 ## Metrics
 
 Clean runs report:

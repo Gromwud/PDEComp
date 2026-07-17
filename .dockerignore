@@ -1,0 +1,10 @@
+.git
+.idea
+.vscode
+__pycache__
+*.pyc
+.pytest_cache
+results
+deepmod_runs
+tmp_burgers
+stuff
