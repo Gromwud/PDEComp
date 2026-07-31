@@ -4,16 +4,20 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      - NVIDIA_VISIBLE_DEVICES=all
       - PYTHONPATH=/app
     volumes:
       - ./data:/app/data:ro
       - ./results:/app/results
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
     command: ["python", "clean_run_metrics.py", "all"]
+
+  discover:
+    build:
+      context: ./discover
+      dockerfile: Dockerfile
+    environment:
+      - PYTHONPATH=/app:/app/discover
+      - PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: ["python", "clean_run_metrics.py", "discover"]

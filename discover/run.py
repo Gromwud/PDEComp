@@ -1,161 +1,217 @@
-import os
-import numpy as np
-import warnings
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-warnings.filterwarnings("ignore", category=FutureWarning, module='numpy.*')
-warnings.filterwarnings("ignore", category=UserWarning, module='tensorflow.*')
-
-# from dso.PDE_discover import SymEqOptimizer, DeepSymbolicOptimizer
-from dso import DeepSymbolicOptimizer_PDE
-from pathlib import Path
-import scipy.io as scio
 import json
-import torch
+import sys
+import time
 from datetime import datetime
+from pathlib import Path
 
-DATA_DIR = Path("data")
-RESULTS_DIR = Path("results/epde")
-DATASETS = [
-    "ac_data.npy",
-    # "kdv_data.mat",
-    # "burgers_data.mat",
-    # "vdp_data.npy",
-    # "pde_divide_data.npy"
-]
+import numpy as np
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DISCOVER_ROOT = Path(__file__).resolve().parent
+DSO_ROOT = DISCOVER_ROOT
+RESULTS_DIR = Path("results/discover")
+
+sys.path.insert(0, str(PROJECT_ROOT))
+sys.path.insert(0, str(DSO_ROOT))
+
+from data.config import DISCOVER_DATASETS, DISCOVER_DEFAULTS, discover_params, sindy_params
+from utils.dataloader import load_data
+
+
+DATASETS = DISCOVER_DATASETS
 
 
 def save_combined_results(results):
-    """Save results to a common JSON file"""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_file = RESULTS_DIR / f"results_{timestamp}.json"
-    output_file.parent.mkdir(exist_ok=True)
-
-    result = []
-
-    result.append(results)
-
-    with open(output_file, "w") as f:
-        json.dump(result, f, indent=2)
+    output_file = RESULTS_DIR / f"results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_file, "w", encoding="utf-8") as handle:
+        json.dump([results], handle, indent=2)
 
 
-def load_data(filename):
-    """Загрузка данных без привязки к структуре базового класса"""
-
-    if filename == "ode_data.npy" or filename == "vdp_data.npy":
-        data = np.load(DATA_DIR / filename)
-        step = 0.05
-        steps_num = 320
-        t = np.arange(start=0.0, stop=step * steps_num, step=step)
-        x = None
-        y = None
-        z = None
-
-    elif filename == "kdv_periodic_data.npy":
-        data = np.load(DATA_DIR / filename)
-        shape = len(data)
-        t = np.linspace(0, 1, shape)
-        x = np.linspace(0, 1, shape)
-        y = None
-        z = None
-
-    elif filename == "ac_data.npy":
-        data = np.load(DATA_DIR / filename)
-        t = np.linspace(0.0, 1.0, 51)
-        x = np.linspace(-1.0, 0.984375, 128)
-        y = None
-        z = None
-
-    elif filename == "kdv_data.mat" or filename == "burgers_data.mat":
-        data = scio.loadmat(DATA_DIR / filename)
-        data = np.real(data["usol"]).T
-        t = np.ravel(data["t"])
-        x = np.ravel(data["x"])
-        y = None
-        z = None
-
-    elif filename == "pde_divide_data.npy":
-        data = np.load(DATA_DIR / filename)
-        t = np.linspace(0, 1, 251)
-        x = np.linspace(1, 2, 100)
-        y = None
-        z = None
-
-    elif filename == "pde_compound_data.npy":
-        data = np.load(filename)
-        t = np.linspace(0, 0.5, 251)
-        x = np.linspace(1, 2, 100)
-        y = None
-        z = None
-
-    elif filename == "wave_data.npy":
-        data = np.loadtxt(filename, delimiter=',').T
-        t = np.linspace(0, 1, shape + 1)
-        x = np.linspace(0, 1, shape + 1)
-        y = None
-        z = None
-
-    elif filename == "lorenz_data.npy":
-        data = np.load(filename)
-        t = np.load("lorenz_time.npy")
-        end = 1000
-        t = t[:end]
-        x = data[:end, 0]
-        y = data[:end, 1]
-        z = data[:end, 2]
-
-    elif filename == "lotka_data.npy":
-        data = np.load(filename)
-        t = np.load("lotka_time.npy")
-        end = 150
-        t = t[:end]
-        x = data[:end, 0]
-        y = data[:end, 1]
-        z = None
-                
-    return data, x, y, z, t
+def build_run_params(filename):
+    if filename not in discover_params:
+        raise KeyError(f"No DISCOVER params configured for {filename!r}")
+    params = dict(DISCOVER_DEFAULTS)
+    params.update(discover_params[filename])
+    params["sindy_config"] = sindy_params[filename]
+    return params
 
 
-def run_discover(filename):
-    """Основная логика идентификации"""
-    if filename == "ac_data.npy":
-        config_file_path = "/tmp/discover/dso/dso/config/MODE1/config_pde_KdV.json"
+def discover_config_path(params):
+    return DISCOVER_ROOT / "dso" / "config" / "MODE1" / params["base_config"]
 
-    elif filename == "kdv_data.mat":
-        ...
 
-    elif filename == "burgers_data.mat":
-        ...
-
-    elif filename == "vdp_data.npy":
-        ...
-
-    elif filename == "pde_divide_data.npy":
-        ...
-
-    model = DeepSymbolicOptimizer_PDE(config_file_path)
-
-    result = model.train()
-
-    result = {
-        "dataset": filename.split(".")[0],
-        "coefficients": [],
-        "features": [],
-        # "model_str": str(model.print(precision=4))
+def discover_overrides(filename, params):
+    return {
+        "experiment": {
+            "logdir": str(RESULTS_DIR),
+            "seed": params.get("seed", 0),
+        },
+        "task": {
+            "task_type": "pde",
+            "dataset": filename,
+            "function_set": params["function_set"],
+            "metric": "pde_reward",
+            "metric_params": [params.get("metric_param", 0.01)],
+            "threshold": params.get("threshold", 5e-4),
+            "protected": params.get("protected", False),
+            "decision_tree_threshold_set": [],
+            "eq_num": 1,
+            "spatial_error": params.get("spatial_error", False),
+        },
+        "training": {
+            "n_samples": params["n_samples"],
+            "batch_size": params["batch_size"],
+            "epsilon": params["epsilon"],
+            "n_cores_batch": params["n_cores_batch"],
+            "early_stopping": params["early_stopping"],
+            "verbose": params.get("verbose", True),
+        },
+        "controller": {
+            "attention": False,
+        },
+        "prior": {
+            "length": {"min_": 1, "max_": params.get("max_length", 15), "on": True},
+            "repeat": {"tokens": "add", "min_": None, "max_": params.get("max_add_count", 8), "on": True},
+            "inverse": {"on": False},
+            "trig": {"on": False},
+            "diff_left": {"on": False},
+            "diff_right": {"on": False},
+            "diff_descedent": {"on": False},
+            "soft_length": {"loc": 5, "scale": 3, "on": True},
+        },
+        "gp_meld": {
+            "run_gp_meld": False,
+        },
+        "gp_agg": {
+            "run_gp_agg": False,
+        },
+        "pinn": {
+            "use_pinn": False,
+        },
+        "parameterized": {
+            "on": False,
+        },
     }
 
+
+def term_to_feature(term, feature_names=None):
+    text = repr(term)
+    if feature_names and text.startswith("theta_"):
+        try:
+            index = int(text.split("_", 1)[1])
+            return feature_names[index]
+        except (ValueError, IndexError):
+            return text
+
+    replacements = {
+        "u1": "u",
+        "diff(u1,x1)": "u_x",
+        "diff2(u1,x1)": "u_xx",
+        "diff3(u1,x1)": "u_xxx",
+        "diff4(u1,x1)": "u_xxxx",
+        "n2(u1)": "u^2",
+        "n3(u1)": "u^3",
+        "mul(u1,diff(u1,x1))": "u u_x",
+        "mul(diff(u1,x1),u1)": "u u_x",
+        "mul(u,diff(u,x1))": "u u_x",
+        "mul(u1,diff2(u1,x1))": "u u_xx",
+        "mul(diff2(u1,x1),u1)": "u u_xx",
+        "mul(diff(u1,x1),diff(u1,x1))": "u_x^2",
+        "div(diff(u1,x1),x1)": "(1/x) u_x",
+        "mul(sin(x1),cos(x2))": "sin(x) cos(t)",
+    }
+    return replacements.get(text, text)
+
+
+def extract_result(train_result, filename, target_name, elapsed_time, params):
+    from dso.task.pde import data_load
+
+    library_data = data_load.get_pdecomp_library(filename) or {}
+    feature_names = library_data.get("feature_names")
+
+    program = train_result["program"]
+    terms = getattr(program.STRidge, "terms", [])
+    coefficients = [float(value) for value in np.asarray(program.w, dtype=float).reshape(-1)]
+    selected_features = [term_to_feature(term, feature_names) for term in terms]
+
+    if feature_names:
+        features = list(feature_names)
+        coefficient_by_feature = dict(zip(selected_features, coefficients))
+        coefficients = [coefficient_by_feature.get(feature_name, 0.0) for feature_name in features]
+    else:
+        features = selected_features
+        if len(coefficients) > len(features):
+            features.append("__constant__")
+
+    coefficient_tol = (
+        params
+        .get("sindy_config", {})
+        .get("optimizer", {})
+        .get("coefficient_tol", 1e-12)
+    )
+    coefficients = [
+        0.0 if abs(coefficient) < coefficient_tol else coefficient
+        for coefficient in coefficients
+    ]
+
+    return {
+        "dataset": filename.split(".")[0],
+        "targets": [target_name],
+        "features": [features],
+        "coefficients": [coefficients[: len(features)]],
+        "active_terms": [[feature for feature, coefficient in zip(features, coefficients) if abs(coefficient) > 1e-12]],
+        "library_sizes": {target_name: len(features)},
+        "library_size": len(features),
+        "model": train_result.get("expression", ""),
+        "equation_texts": [train_result.get("expression", "")],
+        "time": elapsed_time,
+        "discover_reward": train_result.get("r", ""),
+        "discover_nmse": train_result.get("nmse_test", ""),
+    }
+
+
+def run_discover(data, x, y, z, t, filename, only_print=True):
+    params = build_run_params(filename)
+
+    try:
+        from dso import DeepSymbolicOptimizer_PDE
+        from dso.task.pde import data_load
+    except Exception as error:
+        raise RuntimeError(
+            "DISCOVER is vendored in discover/dso, but its TensorFlow 1.x stack "
+            "is not importable in the current environment."
+        ) from error
+
+    data_load.set_pdecomp_data(filename, data, x, y, z, t)
+    start = time.perf_counter()
+    try:
+        model = DeepSymbolicOptimizer_PDE(
+            str(discover_config_path(params)),
+            pde_config=discover_overrides(filename, params),
+        )
+        raw_result = model.train()
+        train_result = raw_result[0] if isinstance(raw_result, list) else raw_result
+        elapsed_time = time.perf_counter() - start
+        result = extract_result(train_result, filename, params["target"], elapsed_time, params)
+    finally:
+        data_load.clear_pdecomp_data(filename)
+
+    if only_print:
+        print(result["model"])
     return result
 
 
 if __name__ == "__main__":
-    print("CUDA available: ", torch.cuda.is_available())
     all_results = []
     for dataset in DATASETS:
         print(f"\n=== Processing {dataset} ===")
         try:
-            result = run_discover(dataset)
-            all_results.append(result)
-        except Exception as e:
-            print(f"Error processing {dataset}: {str(e)}")
+            data, x, y, z, t = load_data(dataset)
+            all_results.append(run_discover(data, x, y, z, t, dataset))
+        except Exception as error:
+            print(f"Error processing {dataset}: {error}")
 
-    save_combined_results(all_results)
+    if all_results:
+        save_combined_results(all_results)
     print("\nAll experiments completed!")

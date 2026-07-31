@@ -1,7 +1,7 @@
 # Current Benchmark Results
 
-Current PySINDy and DeepMoD comparison. For multi-equation systems, only the
-aggregate `system` row is shown.
+Current PySINDy, DeepMoD, and DISCOVER comparison. For multi-equation systems,
+only the aggregate `system` row is shown.
 
 ## Clean Runs
 
@@ -48,6 +48,23 @@ optimizers.
 | ks_data.mat | u_t | 8.742 | 33 | 0.0221569 |
 | burgers_sln_100_data.csv | u_t | 0.9585 | 33 | 0.000259235 |
 | ODE_simple_discovery | u_t | 0.0844 | 11 | 0.00132894 |
+
+### DISCOVER
+
+DISCOVER is currently integrated for scalar 1D PDE datasets. It uses the same
+fixed 33-term candidate library as PySINDy/DeepMoD.
+
+| Dataset | Target | Correct structure | Time, s | Library | RE sum |
+|---|---:|---:|---:|---:|---:|
+| burgers_data.mat | u_t | yes | 25.50 | 33 | 0.0185416 |
+| burgers_sln_100_data.csv | u_t | yes | 16.65 | 33 | 0.00395993 |
+| ac_data.npy | u_t | yes | 17.01 | 33 | 0.0133155 |
+| kdv_data.mat | u_t | yes | 37.38 | 33 | 0.0303891 |
+| kdv_periodic_data.npy | u_t | yes | 23.78 | 33 | 0.00640046 |
+| wave_data.csv | u_tt | yes | 10.22 | 33 | 0.0103913 |
+| pde_divide_data.npy | u_t | yes | 23.19 | 33 | 0.000366079 |
+| pde_compound_data.npy | u_t | yes | 18.95 | 33 | 0.000535998 |
+| ks_data.mat | u_t | yes | 66.12 | 33 | 0.036014 |
 
 ## Noise Boundaries
 
@@ -100,3 +117,20 @@ libraries are unchanged.
 | ks_data.mat | u_t | 0.00177 | 3/30 | 0.9 | 0.3051 | 0.5524 | 0.01036 |
 | burgers_sln_100_data.csv | u_t | 0.45 | 3/30 | 1.8 | 0.6103 | 0.009085 | 0.000408 |
 | ODE_simple_discovery | u_t | 9.8 | 3/30 | 3.367 | 3.057 | 0.04288 | 0.02617 |
+
+### DISCOVER
+
+DISCOVER noise metrics were measured only for scalar 1D PDE datasets supported
+by the current wrapper.
+
+| Dataset | Target | Noise level | Correct | HD mean | HD std | RE mean | RE std |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| burgers_data.mat | u_t | 0.515 | 5/30 | 1.133 | 0.6814 | 0.2459 | 0.002784 |
+| burgers_sln_100_data.csv | u_t | 0.00365 | 5/30 | 0.8333 | 0.379 | 0.003217 | 6.648e-05 |
+| ac_data.npy | u_t | 20.5 | 5/30 | 1.067 | 0.6397 | 1.301 | 0.04195 |
+| kdv_data.mat | u_t | 0.024 | 3/30 | 1.8 | 0.6103 | 0.2816 | 0.0003275 |
+| kdv_periodic_data.npy | u_t | 2.2e-05 | 3/30 | 1.8 | 0.6103 | 0.00427 | 2.838e-05 |
+| wave_data.csv | u_tt | 0.0255 | 3/30 | 0.9 | 0.3051 | 0.09405 | 0.01078 |
+| pde_divide_data.npy | u_t | 0.0262 | 5/30 | 3.333 | 1.516 | 0.01283 | 0.0001013 |
+| pde_compound_data.npy | u_t | 0.1795 | 4/30 | 2.6 | 1.037 | 0.02988 | 0.0001233 |
+| ks_data.mat | u_t | 0.01027 | 4/30 | 0.8667 | 0.3457 | 2.599 | 0.0003842 |

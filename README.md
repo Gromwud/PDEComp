@@ -2,7 +2,7 @@
 
 DEComp is a benchmark for comparing equation discovery frameworks on the
 same synthetic ODE/PDE datasets. The current working comparison focuses on
-EPDE, PySINDy and DeepMoD.
+EPDE, PySINDy, DeepMoD and DISCOVER.
 
 ## What Is Compared
 
@@ -55,9 +55,14 @@ python noise_boundary_metrics.py deepmod --boundaries-csv results\deepmod\noise_
 
 It reports HD across all noisy runs and RE only for structurally correct runs.
 
+`discover/run.py` wraps the vendored DISCOVER fork in `discover/dso`. DISCOVER
+currently supports the scalar 1D PDE datasets configured in `data/config.py`.
+Its data loader is patched to receive benchmark data and derivatives from the
+shared `utils/` layer.
+
 ## Docker
 
-The benchmark uses one Docker image for all supported runners:
+The main benchmark image runs PySINDy, DeepMoD and EPDE:
 
 ```powershell
 docker compose build
@@ -73,7 +78,16 @@ docker compose run --rm benchmark python noise_test.py deepmod --datasets ac_dat
 docker compose run --rm benchmark python noise_boundary_metrics.py pysindy --boundaries-csv results/pysindy_noisy/noise_manual_3_5_summary.csv
 ```
 
-The container mounts `data/` as read-only and writes outputs to `results/`.
+DISCOVER uses a separate image because it depends on the old TensorFlow 1.x
+stack:
+
+```powershell
+docker compose build discover
+docker compose run --rm discover
+docker compose run --rm discover python noise_test.py discover --datasets burgers_data.mat --levels 0 1 2
+```
+
+Both containers mount `data/` as read-only and write outputs to `results/`.
 
 ## Metrics
 

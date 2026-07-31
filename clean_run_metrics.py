@@ -60,6 +60,12 @@ def load_framework_module(framework):
             ROOT / "epde" / "run.py",
             extra_paths=(ROOT / "epde" / "EPDE",),
         )
+    if framework == "discover":
+        return load_module(
+            "discover_run",
+            ROOT / "discover" / "run.py",
+            extra_paths=(ROOT / "discover",),
+        )
     raise ValueError(f"Unknown framework: {framework}")
 
 
@@ -316,6 +322,8 @@ def run_framework(framework, module, dataset, args, quiet=True):
             only_print=not quiet,
             return_all=args.epde_best_pareto,
         )
+    if framework == "discover":
+        return module.run_discover(data, x, y, z, t, dataset, only_print=not quiet)
     raise ValueError(f"Unknown framework: {framework}")
 
 
@@ -563,7 +571,7 @@ def default_output(framework):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("framework", choices=["pysindy", "deepmod", "epde", "all"])
+    parser.add_argument("framework", choices=["pysindy", "deepmod", "epde", "discover", "all"])
     parser.add_argument("--datasets", nargs="*", default=None)
     parser.add_argument("--output", default=None)
     parser.add_argument("--show-equations", action="store_true")
@@ -581,12 +589,12 @@ def selected_frameworks(framework):
 
 def main():
     args = parse_args()
-    datasets = args.datasets or DEFAULT_DATASETS
     output_file = Path(args.output) if args.output else default_output(args.framework)
     all_rows = []
 
     for framework in selected_frameworks(args.framework):
         module = load_framework_module(framework)
+        datasets = args.datasets or getattr(module, "DATASETS", DEFAULT_DATASETS)
         for dataset in datasets:
             print(f"\n=== Measuring {framework} / {dataset} ===")
             try:

@@ -475,6 +475,72 @@ deepmod_params = {
 
 DEEPMOD_DATASETS = list(deepmod_params.keys())
 
+
+discover_params = {
+    'burgers_data.mat': {
+        'base_config': 'config_pde_Burgers.json',
+        'function_set': ['add', 'mul', 'div', 'diff', 'diff2', 'n2', 'n3'],
+        'target': 'u_t',
+    },
+    'burgers_sln_100_data.csv': {
+        'base_config': 'config_pde_Burgers.json',
+        'function_set': ['add', 'mul', 'div', 'diff', 'diff2', 'n2', 'n3'],
+        'target': 'u_t',
+    },
+    'ac_data.npy': {
+        'base_config': 'config_pde_Chafee.json',
+        'function_set': ['add', 'mul', 'div', 'diff', 'diff2', 'n2', 'n3'],
+        'target': 'u_t',
+    },
+    'kdv_data.mat': {
+        'base_config': 'config_pde_KdV.json',
+        'function_set': ['add', 'mul', 'div', 'diff', 'diff2', 'diff3', 'n2', 'n3'],
+        'target': 'u_t',
+    },
+    'kdv_periodic_data.npy': {
+        'base_config': 'config_pde_KdV.json',
+        'function_set': ['add', 'mul', 'div', 'diff', 'diff2', 'diff3', 'sin', 'cos', 'n2', 'n3'],
+        'target': 'u_t',
+        'n_samples': 10000,
+        'batch_size': 250,
+        'max_length': 5,
+        'max_add_count': 2,
+    },
+    'wave_data.csv': {
+        'base_config': 'config_pde_wave.json',
+        'function_set': ['add', 'mul', 'div', 'diff', 'diff2', 'n2', 'n3'],
+        'target': 'u_tt',
+    },
+    'pde_divide_data.npy': {
+        'base_config': 'config_pde_Divide.json',
+        'function_set': ['add', 'mul', 'div', 'diff', 'diff2', 'n2', 'n3'],
+        'target': 'u_t',
+    },
+    'pde_compound_data.npy': {
+        'base_config': 'config_pde_Compound.json',
+        'function_set': ['add', 'mul', 'div', 'diff', 'diff2', 'n2', 'n3'],
+        'target': 'u_t',
+    },
+    'ks_data.mat': {
+        'base_config': 'config_pde_KdV.json',
+        'function_set': ['add', 'mul', 'div', 'diff', 'diff2', 'diff3', 'diff4', 'n2', 'n3'],
+        'target': 'u_t',
+    },
+}
+
+
+DISCOVER_DEFAULTS = {
+    'n_samples': 5000,
+    'batch_size': 250,
+    'epsilon': 0.05,
+    'n_cores_batch': 1,
+    'early_stopping': False,
+    'verbose': False,
+}
+
+
+DISCOVER_DATASETS = list(discover_params.keys())
+
 TRUE_COEFFICIENTS = {
     "ode_data.npy": {
         "u_tt": {
