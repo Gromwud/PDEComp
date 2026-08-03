@@ -1,1 +1,4 @@
 
+[submodule "discover/discover"]
+	path = discover/discover
+	url = https://github.com/emil817/DISCOVER

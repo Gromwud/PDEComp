@@ -8,14 +8,22 @@ import numpy as np
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DISCOVER_ROOT = Path(__file__).resolve().parent
-DSO_ROOT = DISCOVER_ROOT
+DISCOVER_FORK_ROOT = DISCOVER_ROOT / "discover"
+DSO_ROOT = DISCOVER_FORK_ROOT / "dso"
 RESULTS_DIR = Path("results/discover")
 
 sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(DSO_ROOT))
 
 from data.config import DISCOVER_DATASETS, DISCOVER_DEFAULTS, discover_params, sindy_params
+from utils.derivatives import compute_derivative_bundle, get_derivative
 from utils.dataloader import load_data
+from utils.sindy_library import (
+    build_crop_slices,
+    build_target_problem,
+    configured_max_deriv_order,
+    default_targets,
+)
 
 
 DATASETS = DISCOVER_DATASETS
@@ -38,7 +46,57 @@ def build_run_params(filename):
 
 
 def discover_config_path(params):
-    return DISCOVER_ROOT / "dso" / "config" / "MODE1" / params["base_config"]
+    return DSO_ROOT / "dso" / "config" / "MODE1" / params["base_config"]
+
+
+def build_external_problem(data, x, y, z, t, filename, params):
+    values = np.asarray(data[0] if isinstance(data, list) else data, dtype=float)
+    if values.ndim != 2:
+        raise ValueError(f"DISCOVER wrapper supports only scalar 1D PDE data, got {filename}")
+
+    sindy_config = params["sindy_config"]
+    bundle = compute_derivative_bundle(
+        values,
+        x=x,
+        y=y,
+        z=z,
+        t=t,
+        variable_names=["u"],
+        max_orders=configured_max_deriv_order(values.shape, sindy_config),
+    )
+    target = sindy_config.get("targets", default_targets(["u"]))[0]
+    crop_slices = build_crop_slices(values.shape, sindy_config.get("crop", 0))
+    target_name, features, feature_names, target_values = build_target_problem(
+        target,
+        sindy_config,
+        bundle,
+        crop_slices,
+        values.shape,
+        x,
+        t,
+    )
+
+    u = values.T
+    derivatives = {}
+    for order in range(1, 5):
+        try:
+            derivatives[order] = get_derivative(bundle, "u", "x", order).T
+        except KeyError:
+            pass
+
+    return {
+        "u": [u],
+        "x": [np.asarray(x, dtype=float).reshape(-1, 1)],
+        "t": np.asarray(t, dtype=float).reshape(-1, 1),
+        "ut": target_values.reshape(-1, 1),
+        "features": features,
+        "feature_names": feature_names,
+        "derivatives": derivatives,
+        "sym_true": params.get("sym_true"),
+        "target_name": target_name,
+        "n_input_var": 1,
+        "n_state_var": 1,
+    }
 
 
 def discover_overrides(filename, params):
@@ -127,7 +185,7 @@ def term_to_feature(term, feature_names=None):
 def extract_result(train_result, filename, target_name, elapsed_time, params):
     from dso.task.pde import data_load
 
-    library_data = data_load.get_pdecomp_library(filename) or {}
+    library_data = data_load.get_external_library(filename) or {}
     feature_names = library_data.get("feature_names")
 
     program = train_result["program"]
@@ -179,11 +237,12 @@ def run_discover(data, x, y, z, t, filename, only_print=True):
         from dso.task.pde import data_load
     except Exception as error:
         raise RuntimeError(
-            "DISCOVER is vendored in discover/dso, but its TensorFlow 1.x stack "
-            "is not importable in the current environment."
+            "DISCOVER is expected in discover/discover/dso, but its TensorFlow 1.x "
+            "stack is not importable in the current environment."
         ) from error
 
-    data_load.set_pdecomp_data(filename, data, x, y, z, t)
+    problem = build_external_problem(data, x, y, z, t, filename, params)
+    data_load.set_external_pde_problem(filename, **problem)
     start = time.perf_counter()
     try:
         model = DeepSymbolicOptimizer_PDE(
@@ -195,7 +254,7 @@ def run_discover(data, x, y, z, t, filename, only_print=True):
         elapsed_time = time.perf_counter() - start
         result = extract_result(train_result, filename, params["target"], elapsed_time, params)
     finally:
-        data_load.clear_pdecomp_data(filename)
+        data_load.clear_external_pde_problem(filename)
 
     if only_print:
         print(result["model"])

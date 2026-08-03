@@ -15,7 +15,7 @@ services:
       context: ./discover
       dockerfile: Dockerfile
     environment:
-      - PYTHONPATH=/app:/app/discover
+      - PYTHONPATH=/app:/app/discover:/app/discover/discover/dso
       - PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
     working_dir: /app
     volumes:

@@ -2,7 +2,7 @@ FROM python:3.7-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/app:/app/discover
+ENV PYTHONPATH=/app:/app/discover:/app/discover/discover/dso
 ENV PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 
 WORKDIR /app
