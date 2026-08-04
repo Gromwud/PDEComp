@@ -2,3 +2,6 @@
 [submodule "discover/discover"]
 	path = discover/discover
 	url = https://github.com/emil817/DISCOVER
+[submodule "deepmod/deepymod"]
+	path = deepmod/deepymod
+	url = https://github.com/emil817/DeePyMoD

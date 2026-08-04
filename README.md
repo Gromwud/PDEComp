@@ -55,11 +55,11 @@ python noise_boundary_metrics.py deepmod --boundaries-csv results\deepmod\noise_
 
 It reports HD across all noisy runs and RE only for structurally correct runs.
 
-`discover/run.py` is the benchmark wrapper. The DISCOVER fork itself is mounted
-as the `discover/discover/` git submodule. DISCOVER currently supports the
-scalar 1D PDE datasets configured in `data/config.py`. Its data loader is
-patched to receive benchmark data and derivatives from the shared `utils/`
-layer.
+`deepmod/run.py` and `discover/run.py` are benchmark wrappers. Their framework
+sources are mounted as git submodules in `deepmod/deepymod/` and
+`discover/discover/`. DISCOVER currently supports the scalar 1D PDE datasets
+configured in `data/config.py`. Its data loader is patched to receive benchmark
+data and derivatives from the shared `utils/` layer.
 
 ## Docker
 
