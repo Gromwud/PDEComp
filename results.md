@@ -51,11 +51,13 @@ optimizers.
 
 ### DISCOVER
 
-DISCOVER is currently integrated for scalar 1D PDE datasets. It uses the same
-fixed 33-term candidate library as PySINDy/DeepMoD.
+DISCOVER is currently integrated for scalar ODE and scalar 1D PDE datasets. It
+uses the same fixed candidate libraries as PySINDy/DeepMoD.
 
 | Dataset | Target | Correct structure | Time, s | Library | RE sum |
 |---|---:|---:|---:|---:|---:|
+| ode_data.npy | u_tt | yes | 11.31 | 12 | 0.0166199 |
+| vdp_data.npy | u_tt | yes | 5.38 | 12 | 0.0683646 |
 | burgers_data.mat | u_t | yes | 25.50 | 33 | 0.0185416 |
 | burgers_sln_100_data.csv | u_t | yes | 16.65 | 33 | 0.00395993 |
 | ac_data.npy | u_t | yes | 17.01 | 33 | 0.0133155 |
@@ -65,6 +67,11 @@ fixed 33-term candidate library as PySINDy/DeepMoD.
 | pde_divide_data.npy | u_t | yes | 23.19 | 33 | 0.000366079 |
 | pde_compound_data.npy | u_t | yes | 18.95 | 33 | 0.000535998 |
 | ks_data.mat | u_t | yes | 66.12 | 33 | 0.036014 |
+| ODE_simple_discovery | u_t | yes | 11.95 | 11 | 0.00132894 |
+
+For `ODE_simple_discovery`, DISCOVER finds `sin(t)` and `u` on clean data
+instead of the benchmark tokens `sin(t)` and `cos(t)`. Since the data itself is
+`u = sin(t) + 1.3 cos(t)`, this is accepted as an equivalent coefficient form.
 
 ## Noise Boundaries
 
@@ -93,7 +100,7 @@ structurally correct runs, where `HD = 0`.
 | ns_data.mat | system | 0.485 | 4/30 | 0.8667 | 0.3457 | 0.2567 | 0.002665 |
 | ks_data.mat | u_t | 0.007155 | 5/30 | 1.667 | 0.7581 | 2.31 | 0.000682 |
 | burgers_sln_100_data.csv | u_t | 0.97 | 3/30 | 1.8 | 0.6103 | 0.03663 | 0.001138 |
-| ODE_simple_discovery | u_t | 10 | 3/30 | 3.7 | 2.231 | 0.04757 | 0.0178 |
+| ODE_simple_discovery | u_t | 10 | 3/30 | 3.633 | 2.189 | 0.04757 | 0.0178 |
 
 ### DeepMoD
 
@@ -116,15 +123,17 @@ libraries are unchanged.
 | ns_data.mat | system | 0.79 | 3/30 | 1.233 | 0.6261 | 0.1898 | 0.0027 |
 | ks_data.mat | u_t | 0.00177 | 3/30 | 0.9 | 0.3051 | 0.5524 | 0.01036 |
 | burgers_sln_100_data.csv | u_t | 0.45 | 3/30 | 1.8 | 0.6103 | 0.009085 | 0.000408 |
-| ODE_simple_discovery | u_t | 9.8 | 3/30 | 3.367 | 3.057 | 0.04288 | 0.02617 |
+| ODE_simple_discovery | u_t | 35 | 3/30 | 4.033 | 2.484 | 0.1014 | 0.06268 |
 
 ### DISCOVER
 
-DISCOVER noise metrics were measured only for scalar 1D PDE datasets supported
-by the current wrapper.
+DISCOVER noise metrics were measured for scalar ODE and scalar 1D PDE datasets
+supported by the current wrapper.
 
 | Dataset | Target | Noise level | Correct | HD mean | HD std | RE mean | RE std |
 |---|---:|---:|---:|---:|---:|---:|---:|
+| ode_data.npy | u_tt | 1.1 | 3/30 | 0.9 | 0.3051 | 0.05036 | 0.004817 |
+| vdp_data.npy | u_tt | 0.14 | 4/30 | 2.6 | 1.037 | 0.05988 | 0.03242 |
 | burgers_data.mat | u_t | 0.515 | 5/30 | 1.133 | 0.6814 | 0.2459 | 0.002784 |
 | burgers_sln_100_data.csv | u_t | 0.00365 | 5/30 | 0.8333 | 0.379 | 0.003217 | 6.648e-05 |
 | ac_data.npy | u_t | 20.5 | 5/30 | 1.067 | 0.6397 | 1.301 | 0.04195 |
@@ -134,3 +143,38 @@ by the current wrapper.
 | pde_divide_data.npy | u_t | 0.0262 | 5/30 | 3.333 | 1.516 | 0.01283 | 0.0001013 |
 | pde_compound_data.npy | u_t | 0.1795 | 4/30 | 2.6 | 1.037 | 0.02988 | 0.0001233 |
 | ks_data.mat | u_t | 0.01027 | 4/30 | 0.8667 | 0.3457 | 2.599 | 0.0003842 |
+| ODE_simple_discovery | u_t | 110 | 3/30 | 2.533 | 1.279 | 0.3281 | 0.1505 |
+
+For `ODE_simple_discovery`, both `cos(t), sin(t)` and the equivalent
+`u, sin(t)` form are counted as correct.
+
+The same equivalent-form rule was also checked for PySINDy and DeepMoD.
+PySINDy still reaches the 3/30 boundary at noise 10, while DeepMoD's accepted
+boundary increases to noise 35 because several noisy runs use the equivalent
+`u, sin(t)` representation.
+
+## Conclusions
+
+- On clean data, all three compared frameworks recover the configured scalar
+  equations that they currently support. PySINDy is the fastest baseline,
+  DeepMoD is slower because it uses its own sparse-estimator path, and DISCOVER
+  is the slowest because it performs symbolic search with a TensorFlow 1.x
+  reinforcement-learning loop.
+- PySINDy gives stable and very fast clean runs across the full benchmark,
+  including ODEs, PDEs, and systems. Its main weak points under noise are
+  high-order derivative datasets such as `kdv_periodic_data.npy`, `ks_data.mat`,
+  and some coefficient errors at the noise boundary.
+- DeepMoD matches or improves clean coefficient errors on several datasets, but
+  its noise robustness is uneven. It is strong on `ode_data.npy`, `ns_data.mat`,
+  and `pde_compound_data.npy`, but much weaker than PySINDy on
+  `burgers_data.mat`, `wave_data.csv`, and the periodic KdV case.
+- DISCOVER works well in the current benchmark for scalar ODE and scalar 1D PDE
+  datasets through the fixed-library wrapper. It is competitive on several PDE
+  noise thresholds, especially `kdv_data.mat`, `pde_compound_data.npy`, and
+  `ks_data.mat`, but it is not currently evaluated on systems such as
+  Navier-Stokes.
+- The shared-library setup makes the comparison mostly about structure
+  selection and coefficient estimation, not about different candidate spaces.
+  This is useful for fair benchmarking, but it also means framework-specific
+  advantages such as DISCOVER MODE2/PINN denoising are not included in these
+  numbers.
