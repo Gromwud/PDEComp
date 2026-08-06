@@ -32,10 +32,11 @@ coefficients.
   NumPy feature matrices and target derivatives. The wrapper uses DeePyMoD's
   optimizer classes, then maps selected terms back to the shared benchmark
   feature names for metrics.
-- **EPDE** is run through its evolutionary search pipeline. Dataset-specific
-  EPDE settings are stored directly in `data/config.py`; the wrapper prepares
-  benchmark data, coordinate tensors, derivatives, and custom token families so
-  EPDE searches in the comparable term space.
+- **EPDE** is run through its evolutionary search pipeline. Its source is
+  checked out as the `epde/EPDE` submodule. Dataset-specific EPDE settings are
+  stored directly in `data/config.py`; the wrapper prepares benchmark data,
+  coordinate tensors, derivatives, and custom token families so EPDE searches
+  in the comparable term space.
 - **DISCOVER** is connected as a separate submodule and container because it
   uses a TensorFlow 1.x stack. The benchmark uses its external fixed-library
   mode: shared features are passed as fixed `theta_*` tokens, and DISCOVER
@@ -79,10 +80,11 @@ python noise_boundary_metrics.py deepmod --boundaries-csv results\deepmod\noise_
 
 It reports HD across all noisy runs and RE only for structurally correct runs.
 
-`deepmod/run.py` and `discover/run.py` are benchmark wrappers. Their framework
-sources are checked out as git submodules in `deepmod/deepymod/` and
-`discover/discover/`. DISCOVER supports the configured scalar ODE and 1D PDE
-datasets through an external fixed-library mode. In this mode the shared
+`deepmod/run.py`, `epde/run.py`, and `discover/run.py` are benchmark wrappers.
+Their framework sources are checked out as git submodules in
+`deepmod/deepymod/`, `epde/EPDE/`, and `discover/discover/`. DISCOVER supports
+the configured scalar ODE and 1D PDE datasets through an external fixed-library
+mode. In this mode the shared
 `utils/` layer loads the data, computes the target derivative, and builds the
 same candidate library used by the other frameworks. DISCOVER then searches over
 fixed `theta_*` library terms instead of relying on its built-in PDE derivative
