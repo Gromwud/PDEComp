@@ -207,7 +207,7 @@ def default_output(framework):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("framework", choices=["pysindy", "deepmod", "epde", "discover"])
+    parser.add_argument("framework", choices=["pysindy", "deepmod", "epde", "discover", "edl"])
     parser.add_argument("--runs", type=int, default=noise_test.DEFAULT_RUNS)
     parser.add_argument("--boundaries-csv", default="")
     parser.add_argument("--output", default="")

@@ -8,3 +8,6 @@
 [submodule "epde/EPDE"]
 	path = epde/EPDE
 	url = https://github.com/ITMO-NSS-team/EPDE.git
+[submodule "edl/EDL"]
+	path = edl/EDL
+	url = https://github.com/menggedu/EDL

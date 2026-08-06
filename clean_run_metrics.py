@@ -66,6 +66,12 @@ def load_framework_module(framework):
             ROOT / "discover" / "run.py",
             extra_paths=(ROOT / "discover",),
         )
+    if framework == "edl":
+        return load_module(
+            "edl_run",
+            ROOT / "edl" / "run.py",
+            extra_paths=(ROOT / "edl" / "EDL" / "evaluation",),
+        )
     raise ValueError(f"Unknown framework: {framework}")
 
 
@@ -358,6 +364,8 @@ def run_framework(framework, module, dataset, args, quiet=True):
         )
     if framework == "discover":
         return module.run_discover(data, x, y, z, t, dataset, only_print=not quiet)
+    if framework == "edl":
+        return module.run_edl(data, x, y, z, t, dataset)
     raise ValueError(f"Unknown framework: {framework}")
 
 
@@ -605,7 +613,7 @@ def default_output(framework):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("framework", choices=["pysindy", "deepmod", "epde", "discover", "all"])
+    parser.add_argument("framework", choices=["pysindy", "deepmod", "epde", "discover", "edl", "all"])
     parser.add_argument("--datasets", nargs="*", default=None)
     parser.add_argument("--output", default=None)
     parser.add_argument("--show-equations", action="store_true")
@@ -617,7 +625,7 @@ def parse_args():
 
 def selected_frameworks(framework):
     if framework == "all":
-        return ["pysindy", "deepmod", "epde"]
+        return ["pysindy", "deepmod", "epde", "edl"]
     return [framework]
 
 

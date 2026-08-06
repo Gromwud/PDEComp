@@ -1,7 +1,7 @@
 # Current Benchmark Results
 
-Current PySINDy, DeepMoD, and DISCOVER comparison. For multi-equation systems,
-only the aggregate `system` row is shown.
+Current PySINDy, DeepMoD, DISCOVER, and EDL comparison. For multi-equation
+systems, only the aggregate `system` row is shown.
 
 ## Clean Runs
 
@@ -72,6 +72,30 @@ uses the same fixed candidate libraries as PySINDy/DeepMoD.
 For `ODE_simple_discovery`, DISCOVER finds `sin(t)` and `u` on clean data
 instead of the benchmark tokens `sin(t)` and `cos(t)`. Since the data itself is
 `u = sin(t) + 1.3 cos(t)`, this is accepted as an equivalent coefficient form.
+
+### EDL
+
+EDL is integrated through its STRidge sparse-regression backend on the shared
+fixed candidate libraries. The full LLM proposal loop is not used in automatic
+metrics.
+
+| Dataset | Target | Correct structure | Time, s | Library | RE sum |
+|---|---:|---:|---:|---:|---:|
+| ode_data.npy | u_tt | yes | 0.00132 | 12 | 0.0164968 |
+| vdp_data.npy | u_tt | no | 0.00207 | 12 | 0.751936 |
+| lorenz_data.npy | system | no | 0.02256 | 60 | 6.24022 |
+| lotka_data.npy | system | no | 0.00385 | 20 | 2.42825 |
+| burgers_data.mat | u_t | no | 0.04959 | 33 | 0.124677 |
+| ac_data.npy | u_t | no | 0.02529 | 33 | 0.00591937 |
+| kdv_data.mat | u_t | no | 0.34853 | 33 | 0.891644 |
+| kdv_periodic_data.npy | u_t | yes | 0.02177 | 33 | 0.00763867 |
+| wave_data.csv | u_tt | no | 0.02551 | 33 | 0.256931 |
+| pde_divide_data.npy | u_t | yes | 0.07480 | 33 | 0.00929917 |
+| pde_compound_data.npy | u_t | no | 0.10206 | 33 | 0.00550815 |
+| ns_data.mat | system | yes | 0.65576 | 23 | 0.534741 |
+| ks_data.mat | u_t | no | 0.77798 | 33 | 0.036747 |
+| burgers_sln_100_data.csv | u_t | no | 0.05232 | 33 | 0.0263926 |
+| ODE_simple_discovery | u_t | yes | 0.00090 | 11 | 0.00132894 |
 
 ## Noise Boundaries
 
@@ -155,11 +179,9 @@ boundary increases to noise 35 because several noisy runs use the equivalent
 
 ## Conclusions
 
-- On clean data, all three compared frameworks recover the configured scalar
-  equations that they currently support. PySINDy is the fastest baseline,
-  DeepMoD is slower because it uses its own sparse-estimator path, and DISCOVER
-  is the slowest because it performs symbolic search with a TensorFlow 1.x
-  reinforcement-learning loop.
+- On clean data, PySINDy, DeepMoD, and DISCOVER recover the configured scalar
+  equations that they currently support. EDL's STRidge backend is very fast, but
+  needs additional tuning because it often keeps extra correlated terms.
 - PySINDy gives stable and very fast clean runs across the full benchmark,
   including ODEs, PDEs, and systems. Its main weak points under noise are
   high-order derivative datasets such as `kdv_periodic_data.npy`, `ks_data.mat`,
@@ -173,8 +195,12 @@ boundary increases to noise 35 because several noisy runs use the equivalent
   noise thresholds, especially `kdv_data.mat`, `pde_compound_data.npy`, and
   `ks_data.mat`, but it is not currently evaluated on systems such as
   Navier-Stokes.
+- EDL currently has a reproducible backend-only integration. It is already
+  structurally correct on `ode_data.npy`, `kdv_periodic_data.npy`,
+  `pde_divide_data.npy`, `ns_data.mat`, and `ODE_simple_discovery`, but the full
+  LLM proposal loop is not included in these numbers.
 - The shared-library setup makes the comparison mostly about structure
   selection and coefficient estimation, not about different candidate spaces.
   This is useful for fair benchmarking, but it also means framework-specific
-  advantages such as DISCOVER MODE2/PINN denoising are not included in these
-  numbers.
+  advantages such as DISCOVER MODE2/PINN denoising or EDL's LLM-guided proposal
+  loop are not included in these numbers.

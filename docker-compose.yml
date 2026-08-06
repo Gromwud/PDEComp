@@ -44,3 +44,15 @@ services:
       - ./data:/app/data:ro
       - ./results:/app/results
     command: ["python", "clean_run_metrics.py", "discover"]
+
+  edl:
+    build:
+      context: .
+      dockerfile: edl/Dockerfile
+    environment:
+      - PYTHONPATH=/app:/app/edl/EDL/evaluation
+    working_dir: /app
+    volumes:
+      - ./data:/app/data:ro
+      - ./results:/app/results
+    command: ["python", "clean_run_metrics.py", "edl"]

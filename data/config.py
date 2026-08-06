@@ -476,6 +476,70 @@ deepmod_params = {
 DEEPMOD_DATASETS = list(deepmod_params.keys())
 
 
+EDL_DEFAULTS = {
+    'optimizer': {
+        'type': 'STRidge',
+        'lam': 1e-5,
+        'tol': 0.1,
+        'str_iters': 10,
+        'normalize': 2,
+        'coefficient_tol': 0.0,
+    },
+}
+
+
+edl_params = {
+    'ode_data.npy': {
+        'optimizer': {'type': 'STRidge', 'lam': 1e-10, 'tol': 1e-4, 'normalize': 2, 'coefficient_tol': 0.1},
+    },
+    'vdp_data.npy': {
+        'optimizer': {'type': 'STRidge', 'lam': 1e-10, 'tol': 1e-3, 'normalize': 2, 'coefficient_tol': 0.1},
+    },
+    'lorenz_data.npy': {
+        'optimizer': {'type': 'STRidge', 'lam': 1e-8, 'tol': 0.1, 'normalize': 2, 'coefficient_tol': 0.0},
+    },
+    'lotka_data.npy': {
+        'optimizer': {'type': 'STRidge', 'lam': 1e-8, 'tol': 0.1, 'normalize': 2, 'coefficient_tol': 0.0},
+    },
+    'burgers_data.mat': {
+        'optimizer': {'type': 'STRidge', 'lam': 1e-8, 'tol': 0.05, 'normalize': 2, 'coefficient_tol': 0.01},
+    },
+    'ac_data.npy': {
+        'optimizer': {'type': 'STRidge', 'lam': 1e-4, 'tol': 0.1, 'normalize': 2, 'coefficient_tol': 0.01},
+    },
+    'kdv_data.mat': {
+        'optimizer': {'type': 'STRidge', 'lam': 1e-8, 'tol': 0.05, 'normalize': 2, 'coefficient_tol': 0.2},
+    },
+    'kdv_periodic_data.npy': {
+        'optimizer': {'type': 'STRidge', 'lam': 1e-8, 'tol': 0.05, 'normalize': 2, 'coefficient_tol': 0.01},
+    },
+    'wave_data.csv': {
+        'optimizer': {'type': 'STRidge', 'lam': 1e-8, 'tol': 0.01, 'normalize': 2, 'coefficient_tol': 0.01},
+    },
+    'pde_divide_data.npy': {
+        'optimizer': {'type': 'STRidge', 'lam': 1e-8, 'tol': 0.05, 'normalize': 2, 'coefficient_tol': 0.2},
+    },
+    'pde_compound_data.npy': {
+        'optimizer': {'type': 'STRidge', 'lam': 1e-8, 'tol': 0.05, 'normalize': 2, 'coefficient_tol': 0.05},
+    },
+    'ns_data.mat': {
+        'optimizer': {'type': 'STRidge', 'lam': 1e-5, 'tol': 0.05, 'normalize': 2, 'coefficient_tol': 0.01},
+    },
+    'ks_data.mat': {
+        'optimizer': {'type': 'STRidge', 'lam': 1e-8, 'tol': 0.05, 'normalize': 2, 'coefficient_tol': 0.01},
+    },
+    'burgers_sln_100_data.csv': {
+        'optimizer': {'type': 'STRidge', 'lam': 1e-8, 'tol': 0.05, 'normalize': 2, 'coefficient_tol': 0.01},
+    },
+    'ODE_simple_discovery': {
+        'optimizer': {'type': 'STRidge', 'lam': 1e-8, 'tol': 0.5, 'normalize': 2, 'coefficient_tol': 0.0},
+    },
+}
+
+
+EDL_DATASETS = list(edl_params.keys())
+
+
 discover_params = {
     'ode_data.npy': {
         'base_config': 'config_pde_Burgers.json',

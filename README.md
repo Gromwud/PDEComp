@@ -2,7 +2,7 @@
 
 DEComp is a benchmark for comparing equation discovery frameworks on the
 same synthetic ODE/PDE datasets. The current working comparison focuses on
-EPDE, PySINDy, DeepMoD and DISCOVER.
+EPDE, PySINDy, DeepMoD, DISCOVER and EDL.
 
 ## What Is Compared
 
@@ -42,6 +42,11 @@ coefficients.
   mode: shared features are passed as fixed `theta_*` tokens, and DISCOVER
   searches symbolic combinations of those tokens. In the current wrapper it is
   used for scalar ODE and scalar 1D PDE datasets, not for systems.
+- **EDL** is connected as the `edl/EDL` submodule. The original EDL method uses
+  an LLM to propose equation candidates and then scores/fits them on data. For
+  reproducible benchmark runs without API keys, `edl/run.py` uses EDL's STRidge
+  sparse-regression backend on the same fixed feature matrices and target
+  derivatives built by the shared `utils/` layer.
 
 ## Main Scripts
 
@@ -80,17 +85,22 @@ python noise_boundary_metrics.py deepmod --boundaries-csv results\deepmod\noise_
 
 It reports HD across all noisy runs and RE only for structurally correct runs.
 
-`deepmod/run.py`, `epde/run.py`, and `discover/run.py` are benchmark wrappers.
+`deepmod/run.py`, `epde/run.py`, `discover/run.py`, and `edl/run.py` are benchmark wrappers.
 Their framework sources are checked out as git submodules in
-`deepmod/deepymod/`, `epde/EPDE/`, and `discover/discover/`. DISCOVER supports
-the configured scalar ODE and 1D PDE datasets through an external fixed-library
-mode. In this mode the shared
+`deepmod/deepymod/`, `epde/EPDE/`, `discover/discover/`, and `edl/EDL/`.
+DISCOVER supports the configured scalar ODE and 1D PDE datasets through an
+external fixed-library mode. In this mode the shared
 `utils/` layer loads the data, computes the target derivative, and builds the
 same candidate library used by the other frameworks. DISCOVER then searches over
 fixed `theta_*` library terms instead of relying on its built-in PDE derivative
 tokens. For ODE datasets, the wrapper passes a dummy spatial coordinate only to
 fit DISCOVER's PDE-task interface; the actual ODE library and target are still
 computed from the benchmark data.
+
+EDL supports the configured benchmark datasets through its STRidge backend. The
+wrapper does not call the LLM prompting loop during automatic metrics, because
+that would require external model credentials and would make repeated noisy
+runs non-deterministic.
 
 ## Docker
 
@@ -101,6 +111,7 @@ pysindy   -> PySINDy dependencies
 deepmod   -> DeePyMoD dependencies
 epde      -> EPDE dependencies
 discover  -> DISCOVER with TensorFlow 1.x
+edl       -> EDL sparse-regression backend
 ```
 
 Build all images:
@@ -116,6 +127,7 @@ docker compose run --rm pysindy
 docker compose run --rm deepmod
 docker compose run --rm epde
 docker compose run --rm discover
+docker compose run --rm edl
 ```
 
 Any benchmark script can be run in the matching framework container:
@@ -125,6 +137,7 @@ docker compose run --rm pysindy python noise_test.py pysindy --datasets ode_data
 docker compose run --rm deepmod python noise_test.py deepmod --datasets ac_data.npy --levels 10 15 20
 docker compose run --rm epde python clean_run_metrics.py epde --datasets wave_data.csv
 docker compose run --rm discover python noise_boundary_metrics.py discover --boundaries-csv results/discover/noise_boundaries_3_5.csv
+docker compose run --rm edl python clean_run_metrics.py edl --datasets burgers_data.mat
 ```
 
 All framework containers mount `data/` as read-only and write outputs to the
