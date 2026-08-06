@@ -8,14 +8,12 @@ import numpy as np
 import noise_test
 from clean_run_metrics import (
     COEFFICIENT_TOLERANCE,
-    TRUE_COEFFICIENTS,
-    active_features,
+    best_true_coefficient_match,
     coefficient_by_feature,
     framework_feature_normalizer,
     load_framework_module,
     normalize_result,
     normalize_target,
-    relative_error_sum,
 )
 
 
@@ -27,27 +25,28 @@ DEFAULT_BOUNDARY_FILES = {
 }
 
 
-def hamming_distance(active, expected):
-    return len(active - expected) + len(expected - active)
-
-
 def target_metrics(framework, dataset, result, target_index):
     result = normalize_result(result)
     raw_target = result["targets"][target_index]
     target_name = normalize_target(framework, raw_target, dataset)
-    true_coefficients = TRUE_COEFFICIENTS[dataset][target_name]
     fitted_coefficients = coefficient_by_feature(
         result,
         target_index,
         dataset=dataset,
         feature_normalizer=framework_feature_normalizer(framework),
     )
-    active = active_features(fitted_coefficients, tolerance=COEFFICIENT_TOLERANCE)
-    expected = set(true_coefficients)
+    truth_match = best_true_coefficient_match(
+        dataset,
+        target_name,
+        fitted_coefficients,
+        tolerance=COEFFICIENT_TOLERANCE,
+    )
+    if truth_match is None:
+        raise KeyError(f"No true coefficients configured for {dataset} / {target_name}")
     return {
         "target": target_name,
-        "hd": hamming_distance(active, expected),
-        "re": relative_error_sum(fitted_coefficients, true_coefficients),
+        "hd": truth_match["hamming"],
+        "re": truth_match["relative_error_sum"],
     }
 
 

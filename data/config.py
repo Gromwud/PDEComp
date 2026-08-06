@@ -477,6 +477,21 @@ DEEPMOD_DATASETS = list(deepmod_params.keys())
 
 
 discover_params = {
+    'ode_data.npy': {
+        'base_config': 'config_pde_Burgers.json',
+        'function_set': ['add'],
+        'target': 'u_tt',
+    },
+    'vdp_data.npy': {
+        'base_config': 'config_pde_Burgers.json',
+        'function_set': ['add'],
+        'target': 'u_tt',
+    },
+    'ODE_simple_discovery': {
+        'base_config': 'config_pde_Burgers.json',
+        'function_set': ['add'],
+        'target': 'u_t',
+    },
     'burgers_data.mat': {
         'base_config': 'config_pde_Burgers.json',
         'function_set': ['add', 'mul', 'div', 'diff', 'diff2', 'n2', 'n3'],
@@ -656,5 +671,16 @@ TRUE_COEFFICIENTS = {
             "cos(t)": 1.0,
             "sin(t)": -1.3,
         },
+    },
+}
+
+TRUE_COEFFICIENT_ALTERNATIVES = {
+    "ODE_simple_discovery": {
+        "u_t": [
+            {
+                "u": 1.0 / 1.3,
+                "sin(t)": -(1.0 / 1.3 + 1.3),
+            },
+        ],
     },
 }

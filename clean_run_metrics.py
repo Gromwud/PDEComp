@@ -10,7 +10,7 @@ from pathlib import Path
 
 import numpy as np
 
-from data.config import TRUE_COEFFICIENTS
+from data.config import TRUE_COEFFICIENTS, TRUE_COEFFICIENT_ALTERNATIVES
 from utils.dataloader import load_data
 
 
@@ -287,6 +287,40 @@ def relative_error_sum(fitted_coefficients, true_coefficients):
     return total
 
 
+def true_coefficient_alternatives(dataset, target):
+    primary = TRUE_COEFFICIENTS.get(dataset, {}).get(target)
+    if primary is None:
+        return []
+    return [
+        primary,
+        *TRUE_COEFFICIENT_ALTERNATIVES.get(dataset, {}).get(target, []),
+    ]
+
+
+def structure_hamming(active, expected):
+    return len(active - expected) + len(expected - active)
+
+
+def best_true_coefficient_match(dataset, target, fitted_coefficients, tolerance=COEFFICIENT_TOLERANCE):
+    alternatives = true_coefficient_alternatives(dataset, target)
+    if not alternatives:
+        return None
+
+    active = active_features(fitted_coefficients, tolerance=tolerance)
+    matches = []
+    for true_coefficients in alternatives:
+        expected = set(true_coefficients)
+        matches.append({
+            "true_coefficients": true_coefficients,
+            "expected": expected,
+            "missing": expected - active,
+            "extra": active - expected,
+            "hamming": structure_hamming(active, expected),
+            "relative_error_sum": relative_error_sum(fitted_coefficients, true_coefficients),
+        })
+    return min(matches, key=lambda match: (match["hamming"], match["relative_error_sum"]))
+
+
 def format_feature_list(features):
     return "; ".join(sorted(features))
 
@@ -372,20 +406,20 @@ def summarize_target(framework, dataset, result, target_index, runtime_seconds):
         dataset=dataset,
         feature_normalizer=feature_normalizer,
     )
-    true_coefficients = TRUE_COEFFICIENTS.get(dataset, {}).get(target)
     active = active_features(fitted_coefficients)
+    truth_match = best_true_coefficient_match(dataset, target, fitted_coefficients)
 
-    if true_coefficients is None:
+    if truth_match is None:
         expected = set()
         missing = set()
         extra = active
         error_sum = ""
         truth_defined = False
     else:
-        expected = set(true_coefficients)
-        missing = expected - active
-        extra = active - expected
-        error_sum = relative_error_sum(fitted_coefficients, true_coefficients)
+        expected = truth_match["expected"]
+        missing = truth_match["missing"]
+        extra = truth_match["extra"]
+        error_sum = truth_match["relative_error_sum"]
         truth_defined = True
 
     structure_hamming = ""

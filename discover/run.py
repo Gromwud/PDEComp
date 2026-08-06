@@ -49,10 +49,20 @@ def discover_config_path(params):
     return DSO_ROOT / "dso" / "config" / "MODE1" / params["base_config"]
 
 
+def scalar_values(data, filename):
+    if isinstance(data, list):
+        if len(data) != 1:
+            raise ValueError(f"DISCOVER wrapper supports scalar equations only, got a system in {filename}")
+        data = data[0]
+    return np.asarray(data, dtype=float)
+
+
 def build_external_problem(data, x, y, z, t, filename, params):
-    values = np.asarray(data[0] if isinstance(data, list) else data, dtype=float)
-    if values.ndim != 2:
-        raise ValueError(f"DISCOVER wrapper supports only scalar 1D PDE data, got {filename}")
+    values = scalar_values(data, filename)
+    if values.ndim not in (1, 2):
+        raise ValueError(f"DISCOVER wrapper supports scalar ODE and 1D PDE data, got {filename}")
+    if values.ndim == 2 and x is None:
+        raise ValueError(f"DISCOVER 1D PDE data requires an x grid for {filename}")
 
     sindy_config = params["sindy_config"]
     bundle = compute_derivative_bundle(
@@ -76,17 +86,24 @@ def build_external_problem(data, x, y, z, t, filename, params):
         t,
     )
 
-    u = values.T
+    if values.ndim == 1:
+        u = values.reshape(-1, 1)
+        discover_x = [np.zeros((values.size, 1), dtype=float)]
+    else:
+        u = values.T
+        discover_x = [np.asarray(x, dtype=float).reshape(-1, 1)]
+
     derivatives = {}
-    for order in range(1, 5):
-        try:
-            derivatives[order] = get_derivative(bundle, "u", "x", order).T
-        except KeyError:
-            pass
+    if values.ndim == 2:
+        for order in range(1, 5):
+            try:
+                derivatives[order] = get_derivative(bundle, "u", "x", order).T
+            except KeyError:
+                pass
 
     return {
         "u": [u],
-        "x": [np.asarray(x, dtype=float).reshape(-1, 1)],
+        "x": discover_x,
         "t": np.asarray(t, dtype=float).reshape(-1, 1),
         "ut": target_values.reshape(-1, 1),
         "features": features,

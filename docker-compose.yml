@@ -1,23 +1,46 @@
 services:
-  benchmark:
+  pysindy:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: pysindy/Dockerfile
     environment:
       - PYTHONPATH=/app
     volumes:
       - ./data:/app/data:ro
       - ./results:/app/results
-    command: ["python", "clean_run_metrics.py", "all"]
+    command: ["python", "clean_run_metrics.py", "pysindy"]
+
+  deepmod:
+    build:
+      context: .
+      dockerfile: deepmod/Dockerfile
+    environment:
+      - PYTHONPATH=/app:/app/deepmod/deepymod/src
+    volumes:
+      - ./data:/app/data:ro
+      - ./results:/app/results
+    command: ["python", "clean_run_metrics.py", "deepmod"]
+
+  epde:
+    build:
+      context: .
+      dockerfile: epde/Dockerfile
+    environment:
+      - PYTHONPATH=/app:/app/epde/EPDE
+    volumes:
+      - ./data:/app/data:ro
+      - ./results:/app/results
+    command: ["python", "clean_run_metrics.py", "epde"]
 
   discover:
     build:
-      context: ./discover
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: discover/Dockerfile
     environment:
       - PYTHONPATH=/app:/app/discover:/app/discover/discover/dso
       - PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
     working_dir: /app
     volumes:
-      - .:/app
+      - ./data:/app/data:ro
+      - ./results:/app/results
     command: ["python", "clean_run_metrics.py", "discover"]
