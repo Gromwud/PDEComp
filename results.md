@@ -81,21 +81,21 @@ metrics.
 
 | Dataset | Target | Correct structure | Time, s | Library | RE sum |
 |---|---:|---:|---:|---:|---:|
-| ode_data.npy | u_tt | yes | 0.00132 | 12 | 0.0164968 |
-| vdp_data.npy | u_tt | no | 0.00207 | 12 | 0.751936 |
-| lorenz_data.npy | system | no | 0.02256 | 60 | 6.24022 |
-| lotka_data.npy | system | no | 0.00385 | 20 | 2.42825 |
-| burgers_data.mat | u_t | no | 0.04959 | 33 | 0.124677 |
-| ac_data.npy | u_t | no | 0.02529 | 33 | 0.00591937 |
-| kdv_data.mat | u_t | no | 0.34853 | 33 | 0.891644 |
-| kdv_periodic_data.npy | u_t | yes | 0.02177 | 33 | 0.00763867 |
-| wave_data.csv | u_tt | no | 0.02551 | 33 | 0.256931 |
-| pde_divide_data.npy | u_t | yes | 0.07480 | 33 | 0.00929917 |
-| pde_compound_data.npy | u_t | no | 0.10206 | 33 | 0.00550815 |
-| ns_data.mat | system | yes | 0.65576 | 23 | 0.534741 |
-| ks_data.mat | u_t | no | 0.77798 | 33 | 0.036747 |
-| burgers_sln_100_data.csv | u_t | no | 0.05232 | 33 | 0.0263926 |
-| ODE_simple_discovery | u_t | yes | 0.00090 | 11 | 0.00132894 |
+| ode_data.npy | u_tt | yes | 0.00153 | 12 | 0.0132529 |
+| vdp_data.npy | u_tt | yes | 0.00124 | 12 | 0.0683646 |
+| lorenz_data.npy | system | yes | 0.00666 | 60 | 0.00049014 |
+| lotka_data.npy | system | yes | 0.00140 | 20 | 0.0141232 |
+| burgers_data.mat | u_t | yes | 0.03037 | 33 | 0.0185416 |
+| ac_data.npy | u_t | yes | 0.00823 | 33 | 0.000290232 |
+| kdv_data.mat | u_t | yes | 0.13539 | 33 | 0.0160525 |
+| kdv_periodic_data.npy | u_t | yes | 0.01874 | 33 | 0.000920047 |
+| wave_data.csv | u_tt | yes | 0.00937 | 33 | 0.00300939 |
+| pde_divide_data.npy | u_t | yes | 0.03781 | 33 | 0.000366079 |
+| pde_compound_data.npy | u_t | yes | 0.02742 | 33 | 0.000299912 |
+| ns_data.mat | system | yes | 0.66061 | 23 | 0.460828 |
+| ks_data.mat | u_t | yes | 0.50837 | 33 | 0.0202997 |
+| burgers_sln_100_data.csv | u_t | yes | 0.01938 | 33 | 0.0239101 |
+| ODE_simple_discovery | u_t | yes | 0.00072 | 11 | 0.00132894 |
 
 ## Noise Boundaries
 
@@ -169,6 +169,29 @@ supported by the current wrapper.
 | ks_data.mat | u_t | 0.01027 | 4/30 | 0.8667 | 0.3457 | 2.599 | 0.0003842 |
 | ODE_simple_discovery | u_t | 110 | 3/30 | 2.533 | 1.279 | 0.3281 | 0.1505 |
 
+### EDL
+
+EDL noise metrics were measured for all configured datasets using the STRidge
+backend on the shared fixed libraries.
+
+| Dataset | Target | Noise level | Correct | HD mean | HD std | RE mean | RE std |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| ode_data.npy | u_tt | 1.5 | 5/30 | 0.9333 | 0.5208 | 0.1745 | 0.03701 |
+| vdp_data.npy | u_tt | 0.25 | 3/30 | 3.6 | 1.754 | 0.04929 | 0.007878 |
+| lorenz_data.npy | system | 0.02 | 3/30 | 4.1 | 2.644 | 0.009565 | 0.008882 |
+| lotka_data.npy | system | 7.5 | 3/30 | 4.333 | 2.644 | 0.0954 | 0.04941 |
+| burgers_data.mat | u_t | 0.274 | 3/30 | 1.8 | 0.6103 | 0.07487 | 0.0008687 |
+| ac_data.npy | u_t | 1 | 3/30 | 1.633 | 0.6687 | 0.003781 | 0.00248 |
+| kdv_data.mat | u_t | 0.00168 | 3/30 | 0.9 | 0.3051 | 0.01535 | 3.052e-06 |
+| kdv_periodic_data.npy | u_t | 1e-05 | 3/30 | 1.833 | 0.7466 | 0.009028 | 0.0006234 |
+| wave_data.csv | u_tt | 0.035 | 3/30 | 1.433 | 0.6789 | 0.03018 | 0.001712 |
+| pde_divide_data.npy | u_t | 0.000234 | 4/30 | 6.933 | 2.766 | 0.0003656 | 1.84e-07 |
+| pde_compound_data.npy | u_t | 0.0112 | 4/30 | 6.067 | 2.42 | 0.00223 | 3.041e-05 |
+| ns_data.mat | system | 0.484 | 3/30 | 0.9 | 0.3051 | 0.2876 | 0.000448 |
+| ks_data.mat | u_t | 0.0002 | 4/30 | 1.733 | 0.6915 | 0.02331 | 1.018e-05 |
+| burgers_sln_100_data.csv | u_t | 0.06 | 4/30 | 1.733 | 0.6915 | 0.005353 | 0.004036 |
+| ODE_simple_discovery | u_t | 38 | 4/30 | 2.433 | 1.87 | 0.2413 | 0.06243 |
+
 For `ODE_simple_discovery`, both `cos(t), sin(t)` and the equivalent
 `u, sin(t)` form are counted as correct.
 
@@ -179,9 +202,9 @@ boundary increases to noise 35 because several noisy runs use the equivalent
 
 ## Conclusions
 
-- On clean data, PySINDy, DeepMoD, and DISCOVER recover the configured scalar
-  equations that they currently support. EDL's STRidge backend is very fast, but
-  needs additional tuning because it often keeps extra correlated terms.
+- On clean data, PySINDy, DeepMoD, and EDL recover all configured equations.
+  DISCOVER recovers the scalar ODE and scalar 1D PDE datasets currently
+  supported by its wrapper.
 - PySINDy gives stable and very fast clean runs across the full benchmark,
   including ODEs, PDEs, and systems. Its main weak points under noise are
   high-order derivative datasets such as `kdv_periodic_data.npy`, `ks_data.mat`,
@@ -195,12 +218,68 @@ boundary increases to noise 35 because several noisy runs use the equivalent
   noise thresholds, especially `kdv_data.mat`, `pde_compound_data.npy`, and
   `ks_data.mat`, but it is not currently evaluated on systems such as
   Navier-Stokes.
-- EDL currently has a reproducible backend-only integration. It is already
-  structurally correct on `ode_data.npy`, `kdv_periodic_data.npy`,
-  `pde_divide_data.npy`, `ns_data.mat`, and `ODE_simple_discovery`, but the full
-  LLM proposal loop is not included in these numbers.
+- EDL currently has a reproducible backend-only integration. After tuning
+  STRidge configs it is structurally correct on all clean datasets and is very
+  fast, but the full LLM proposal loop is not included in these numbers.
 - The shared-library setup makes the comparison mostly about structure
   selection and coefficient estimation, not about different candidate spaces.
   This is useful for fair benchmarking, but it also means framework-specific
   advantages such as DISCOVER MODE2/PINN denoising or EDL's LLM-guided proposal
   loop are not included in these numbers.
+
+## Cross-Framework Summary
+
+Best values in each row are bold. Lower is better for clean RE and runtime;
+higher is better for noise threshold. `-` means the dataset is not supported by
+the current wrapper.
+
+### Aggregate Clean Metrics
+
+Mean runtime and mean RE are averaged over the 12-dataset common subset
+supported by all four frameworks.
+
+| Metric | PySINDy | DeepMoD | DISCOVER | EDL |
+|---|---:|---:|---:|---:|
+| Correct structures | **15/15** | **15/15** | 12/12 supported | **15/15** |
+| Mean runtime, s | 0.134052 | 1.87798 | 22.2867 | **0.0665475** |
+| Mean RE sum | 0.019443 | **0.0117211** | 0.0171856 | 0.0138863 |
+
+### Clean RE Sum
+
+| Dataset | Target | PySINDy | DeepMoD | DISCOVER | EDL |
+|---|---:|---:|---:|---:|---:|
+| ode_data.npy | u_tt | 0.0164969 | 0.0156623 | 0.0166199 | **0.0132529** |
+| vdp_data.npy | u_tt | 0.11788 | **0.0683646** | **0.0683646** | **0.0683646** |
+| lorenz_data.npy | system | 0.0051757 | 0.000766131 | - | **0.00049014** |
+| lotka_data.npy | system | 0.0232233 | **0.0141232** | - | **0.0141232** |
+| burgers_data.mat | u_t | **0.0180568** | 0.0185416 | 0.0185416 | 0.0185416 |
+| ac_data.npy | u_t | 0.00616941 | 0.00184694 | 0.0133155 | **0.000290232** |
+| kdv_data.mat | u_t | 0.0160575 | **0.00241649** | 0.0303891 | 0.0160525 |
+| kdv_periodic_data.npy | u_t | **0.000582275** | 0.00640046 | 0.00640046 | 0.000920047 |
+| wave_data.csv | u_tt | 0.016995 | **0.00300939** | 0.0103913 | **0.00300939** |
+| pde_divide_data.npy | u_t | 0.00208748 | **0.000366079** | **0.000366079** | **0.000366079** |
+| pde_compound_data.npy | u_t | 0.00139669 | **0.000299912** | 0.000535998 | **0.000299912** |
+| ns_data.mat | system | 0.534243 | **0.460828** | - | **0.460828** |
+| ks_data.mat | u_t | 0.0359753 | 0.0221569 | 0.036014 | **0.0202997** |
+| burgers_sln_100_data.csv | u_t | 0.000269232 | **0.000259235** | 0.00395993 | 0.0239101 |
+| ODE_simple_discovery | u_t | 0.00134893 | **0.00132894** | **0.00132894** | **0.00132894** |
+
+### Noise Thresholds
+
+| Dataset | Target | PySINDy | DeepMoD | DISCOVER | EDL |
+|---|---:|---:|---:|---:|---:|
+| ode_data.npy | u_tt | 0.88 | **2.2** | 1.1 | 1.5 |
+| vdp_data.npy | u_tt | **0.486** | 0.22 | 0.14 | 0.25 |
+| lorenz_data.npy | system | **0.72** | 0.0002 | - | 0.02 |
+| lotka_data.npy | system | 4 | 1.5 | - | **7.5** |
+| burgers_data.mat | u_t | **1.1** | 0.092 | 0.515 | 0.274 |
+| ac_data.npy | u_t | **21.5** | 21.3 | 20.5 | 1 |
+| kdv_data.mat | u_t | 0.0124 | 0.0062 | **0.024** | 0.00168 |
+| kdv_periodic_data.npy | u_t | **2.7e-05** | 9.5e-06 | 2.2e-05 | 1e-05 |
+| wave_data.csv | u_tt | **0.498** | 0.026 | 0.0255 | 0.035 |
+| pde_divide_data.npy | u_t | 0.0084 | 0.0101 | **0.0262** | 0.000234 |
+| pde_compound_data.npy | u_t | 0.0452 | 0.127 | **0.1795** | 0.0112 |
+| ns_data.mat | system | 0.485 | **0.79** | - | 0.484 |
+| ks_data.mat | u_t | 0.007155 | 0.00177 | **0.01027** | 0.0002 |
+| burgers_sln_100_data.csv | u_t | **0.97** | 0.45 | 0.00365 | 0.06 |
+| ODE_simple_discovery | u_t | 10 | 35 | **110** | 38 |

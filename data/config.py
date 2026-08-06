@@ -490,49 +490,49 @@ EDL_DEFAULTS = {
 
 edl_params = {
     'ode_data.npy': {
-        'optimizer': {'type': 'STRidge', 'lam': 1e-10, 'tol': 1e-4, 'normalize': 2, 'coefficient_tol': 0.1},
+        'optimizer': {'type': 'STRidge', 'lam': 1.0, 'tol': 5.0, 'normalize': 2, 'coefficient_tol': 0.01},
     },
     'vdp_data.npy': {
-        'optimizer': {'type': 'STRidge', 'lam': 1e-10, 'tol': 1e-3, 'normalize': 2, 'coefficient_tol': 0.1},
+        'optimizer': {'type': 'STRidge', 'lam': 1e-4, 'tol': 1.0, 'normalize': 2, 'coefficient_tol': 0.0},
     },
     'lorenz_data.npy': {
-        'optimizer': {'type': 'STRidge', 'lam': 1e-8, 'tol': 0.1, 'normalize': 2, 'coefficient_tol': 0.0},
+        'optimizer': {'type': 'STRidge', 'lam': 1.0, 'tol': 0.05, 'normalize': 0, 'coefficient_tol': 0.01},
     },
     'lotka_data.npy': {
-        'optimizer': {'type': 'STRidge', 'lam': 1e-8, 'tol': 0.1, 'normalize': 2, 'coefficient_tol': 0.0},
+        'optimizer': {'type': 'STRidge', 'lam': 1e-4, 'tol': 100.0, 'normalize': 2, 'coefficient_tol': 0.0},
     },
     'burgers_data.mat': {
-        'optimizer': {'type': 'STRidge', 'lam': 1e-8, 'tol': 0.05, 'normalize': 2, 'coefficient_tol': 0.01},
+        'optimizer': {'type': 'STRidge', 'lam': 0.01, 'tol': 2.0, 'normalize': 2, 'coefficient_tol': 0.0},
     },
     'ac_data.npy': {
-        'optimizer': {'type': 'STRidge', 'lam': 1e-4, 'tol': 0.1, 'normalize': 2, 'coefficient_tol': 0.01},
+        'optimizer': {'type': 'STRidge', 'lam': 1.0, 'tol': 2.0, 'normalize': 2, 'coefficient_tol': 0.01},
     },
     'kdv_data.mat': {
-        'optimizer': {'type': 'STRidge', 'lam': 1e-8, 'tol': 0.05, 'normalize': 2, 'coefficient_tol': 0.2},
+        'optimizer': {'type': 'STRidge', 'lam': 0.01, 'tol': 5.0, 'normalize': 2, 'coefficient_tol': 0.02},
     },
     'kdv_periodic_data.npy': {
-        'optimizer': {'type': 'STRidge', 'lam': 1e-8, 'tol': 0.05, 'normalize': 2, 'coefficient_tol': 0.01},
+        'optimizer': {'type': 'STRidge', 'lam': 1e-4, 'tol': 1.0, 'normalize': 2, 'coefficient_tol': 0.001},
     },
     'wave_data.csv': {
-        'optimizer': {'type': 'STRidge', 'lam': 1e-8, 'tol': 0.01, 'normalize': 2, 'coefficient_tol': 0.01},
+        'optimizer': {'type': 'STRidge', 'lam': 1.0, 'tol': 20.0, 'normalize': 2, 'coefficient_tol': 0.0},
     },
     'pde_divide_data.npy': {
-        'optimizer': {'type': 'STRidge', 'lam': 1e-8, 'tol': 0.05, 'normalize': 2, 'coefficient_tol': 0.2},
+        'optimizer': {'type': 'STRidge', 'lam': 1e-4, 'tol': 5.0, 'normalize': 2, 'coefficient_tol': 0.0},
     },
     'pde_compound_data.npy': {
-        'optimizer': {'type': 'STRidge', 'lam': 1e-8, 'tol': 0.05, 'normalize': 2, 'coefficient_tol': 0.05},
+        'optimizer': {'type': 'STRidge', 'lam': 1e-4, 'tol': 10.0, 'normalize': 2, 'coefficient_tol': 0.0},
     },
     'ns_data.mat': {
-        'optimizer': {'type': 'STRidge', 'lam': 1e-5, 'tol': 0.05, 'normalize': 2, 'coefficient_tol': 0.01},
+        'optimizer': {'type': 'STRidge', 'lam': 0.01, 'tol': 1.0, 'normalize': 2, 'coefficient_tol': 0.0},
     },
     'ks_data.mat': {
-        'optimizer': {'type': 'STRidge', 'lam': 1e-8, 'tol': 0.05, 'normalize': 2, 'coefficient_tol': 0.01},
+        'optimizer': {'type': 'STRidge', 'lam': 0.01, 'tol': 10.0, 'normalize': 2, 'coefficient_tol': 0.005},
     },
     'burgers_sln_100_data.csv': {
-        'optimizer': {'type': 'STRidge', 'lam': 1e-8, 'tol': 0.05, 'normalize': 2, 'coefficient_tol': 0.01},
+        'optimizer': {'type': 'STRidge', 'lam': 1.0, 'tol': 1e-6, 'normalize': 0, 'coefficient_tol': 0.02},
     },
     'ODE_simple_discovery': {
-        'optimizer': {'type': 'STRidge', 'lam': 1e-8, 'tol': 0.5, 'normalize': 2, 'coefficient_tol': 0.0},
+        'optimizer': {'type': 'STRidge', 'lam': 1.0, 'tol': 1.0, 'normalize': 2, 'coefficient_tol': 0.0},
     },
 }
 
