@@ -1,32 +1,26 @@
 FROM python:3.7-slim
 
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app:/app/discover:/app/discover/discover/dso
+ENV PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
+
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends git libnuma1 ocl-icd-opencl-dev && \
-    rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
-COPY discover/requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt && \
-    pip install tensorboard==1.15 protobuf==3.20
+COPY discover/requirements.txt /tmp/discover-requirements.txt
+RUN pip install --no-cache-dir --upgrade "pip<24" \
+    && pip install --no-cache-dir -r /tmp/discover-requirements.txt
 
-RUN git clone https://github.com/Gromwud/DISCOVER.git /tmp/discover && \
-    cd /tmp/discover/dso && \
-    pip install -e . && \
-    echo "/tmp/discover" > /usr/local/lib/python3.7/site-packages/dso.pth && \
-    cd .. 
+COPY . .
 
-# Copy application files
-COPY discover/run.py .
-COPY data /app/data
+RUN mkdir -p /app/results \
+    && useradd -m appuser \
+    && chown -R appuser:appuser /app
 
-# Setup non-root user
-RUN useradd -m appuser && chown -R appuser:appuser /app
 USER appuser
 
-VOLUME /app/results
-
-CMD ["python", "run.py"]
+CMD ["python", "clean_run_metrics.py", "discover"]

@@ -1,1 +1,13 @@
 
+[submodule "discover/discover"]
+	path = discover/discover
+	url = https://github.com/emil817/DISCOVER
+[submodule "deepmod/deepymod"]
+	path = deepmod/deepymod
+	url = https://github.com/emil817/DeePyMoD
+[submodule "epde/EPDE"]
+	path = epde/EPDE
+	url = https://github.com/ITMO-NSS-team/EPDE.git
+[submodule "edl/EDL"]
+	path = edl/EDL
+	url = https://github.com/menggedu/EDL

@@ -3,84 +3,56 @@ services:
     build:
       context: .
       dockerfile: pysindy/Dockerfile
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
     environment:
-      - NVIDIA_VISIBLE_DEVICES=all
+      - PYTHONPATH=/app
     volumes:
       - ./data:/app/data:ro
       - ./results:/app/results
+    command: ["python", "clean_run_metrics.py", "pysindy"]
+
+  deepmod:
+    build:
+      context: .
+      dockerfile: deepmod/Dockerfile
+    environment:
+      - PYTHONPATH=/app:/app/deepmod/deepymod/src
+    volumes:
+      - ./data:/app/data:ro
+      - ./results:/app/results
+    command: ["python", "clean_run_metrics.py", "deepmod"]
 
   epde:
     build:
       context: .
       dockerfile: epde/Dockerfile
-    deploy: 
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
     environment:
-      - NVIDIA_VISIBLE_DEVICES=all
+      - PYTHONPATH=/app:/app/epde/EPDE
     volumes:
       - ./data:/app/data:ro
       - ./results:/app/results
+    command: ["python", "clean_run_metrics.py", "epde"]
 
   discover:
     build:
       context: .
       dockerfile: discover/Dockerfile
-    deploy:  
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
     environment:
-      - NVIDIA_VISIBLE_DEVICES=all
+      - PYTHONPATH=/app:/app/discover:/app/discover/discover/dso
+      - PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
+    working_dir: /app
     volumes:
       - ./data:/app/data:ro
       - ./results:/app/results
-  
-  # sga-pde:
-  #   build:
-  #     context: .
-  #     dockerfile: sga-pde/Dockerfile
-  #   deploy:  
-  #     resources:
-  #       reservations:
-  #         devices:
-  #           - driver: nvidia
-  #             count: 1
-  #             capabilities: [gpu]
-  #   environment:
-  #     - NVIDIA_VISIBLE_DEVICES=all
-  #   volumes:
-  #     - ./data:/app/data:ro
-  #     - ./results:/app/results
-  
-  deepmod:
+    command: ["python", "clean_run_metrics.py", "discover"]
+
+  edl:
     build:
       context: .
-      dockerfile: deepmod/Dockerfile
-    deploy: 
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+      dockerfile: edl/Dockerfile
     environment:
-      - NVIDIA_VISIBLE_DEVICES=all
+      - PYTHONPATH=/app:/app/edl/EDL/evaluation
+    working_dir: /app
     volumes:
       - ./data:/app/data:ro
       - ./results:/app/results
-  
+    command: ["python", "clean_run_metrics.py", "edl"]

@@ -2,5 +2,7 @@ deepymodcheckpoint.pt
 deepymodmodel.pt
 events*
 
-__pycache__
+__pycache__/
+**/__pycache__/
+*.py[cod]
 results

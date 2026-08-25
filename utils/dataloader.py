@@ -2,7 +2,9 @@ import numpy as np
 from pathlib import Path
 import scipy.io as scio
 import pandas as pd
-DATA_DIR = Path("data")
+
+
+DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 
 
 def load_data(filename):
